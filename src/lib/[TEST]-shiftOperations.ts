@@ -9,7 +9,7 @@ export interface ShiftOperation {
   action: 'add' | 'remove';
 }
 
-import { SHIFT_ORDER } from '../utils/shiftUtils';
+import { SHIFT_ORDER } from '../utils/[TEST]-shiftUtils';
 
 /**
  * Safely parses a date string in YYYY-MM-DD format to a Date object at 00:00:00 local time.

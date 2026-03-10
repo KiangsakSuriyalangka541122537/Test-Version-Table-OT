@@ -4,7 +4,7 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/shiftOperations';
+import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];

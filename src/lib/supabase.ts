@@ -7,4 +7,8 @@ if (!supabaseUrl.startsWith('http')) {
   supabaseUrl = 'https://okeyxsiqxuzimyfwojlu.supabase.co';
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  db: {
+    schema: 'test_env'
+  }
+});
