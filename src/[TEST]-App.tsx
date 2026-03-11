@@ -451,6 +451,12 @@ export default function App() {
       });
 
       if (statusError) throw statusError;
+      
+      setRosterStatus({
+        month_key: monthKey,
+        is_published: false,
+        original_assignments: null
+      });
 
       // 3. Log action
       await supabase.from('test_logs').insert({
