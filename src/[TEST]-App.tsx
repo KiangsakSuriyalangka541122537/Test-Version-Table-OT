@@ -370,6 +370,10 @@ export default function App() {
             const nextDay = format(addDays(parseDateSafe(dateStr), 1), 'yyyy-MM-dd');
             const nextDayShift = shifts.find(s => s.staff_id === staffId && s.date === nextDay);
             const nextDayTypes = nextDayShift && nextDayShift.shift_type ? nextDayShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (nextDayTypes.includes('A')) {
+              alert('ไม่สามารถเพิ่มเวรบ่ายได้ เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไป');
+              return;
+            }
             if (nextDayTypes.length >= 2 && !nextDayTypes.includes('N')) {
               alert('ไม่สามารถเพิ่มเวรบ่ายได้ เนื่องจากจะทำให้วันถัดไปมีเวรดึกเกิน 2 เวร');
               return;
@@ -380,6 +384,10 @@ export default function App() {
             const prevDay = format(addDays(parseDateSafe(dateStr), -1), 'yyyy-MM-dd');
             const prevDayShift = shifts.find(s => s.staff_id === staffId && s.date === prevDay);
             const prevDayTypes = prevDayShift && prevDayShift.shift_type ? prevDayShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (prevDayTypes.includes('N')) {
+              alert('ไม่สามารถเพิ่มเวรดึกได้ เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้า');
+              return;
+            }
             if (prevDayTypes.length >= 2 && !prevDayTypes.includes('A')) {
               alert('ไม่สามารถเพิ่มเวรดึกได้ เนื่องจากจะทำให้วันก่อนหน้ามีเวรบ่ายเกิน 2 เวร');
               return;
