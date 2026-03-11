@@ -119,14 +119,44 @@ export function ShiftSwapRequestModal({
       return;
     }
 
+    // Check for A/N conflict on next day if moving A
+    if (requesterShift.shift_type.includes('A')) {
+      const nextDay = format(addDays(new Date(targetDate), 1), 'yyyy-MM-dd');
+      const targetNextShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === nextDay);
+      const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()) : [];
+      if (targetNextTypes.includes('A')) {
+        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไปของพนักงานปลายทาง');
+        return;
+      }
+    }
+    
+    // Check for A/N conflict on previous day if moving N
+    if (requesterShift.shift_type.includes('N')) {
+      const prevDay = format(addDays(new Date(targetDate), -1), 'yyyy-MM-dd');
+      const targetPrevShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === prevDay);
+      const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()) : [];
+      if (targetPrevTypes.includes('N')) {
+        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้าของพนักงานปลายทาง');
+        return;
+      }
+    }
+
     // Determine which shift type to move
     // If moving to an empty slot and the source is a double shift (e.g., M|A or M|N), 
-    // only move the first part (usually 'M') as requested.
+    // only move the first part (usually 'M') UNLESS it's an A or N shift which must stay together.
     let shiftTypeToMove = requesterShift.shift_type;
-    if (targetShiftId.startsWith('empty-') && requesterShift.shift_type.includes(',')) {
-      const types = requesterShift.shift_type.split(',');
-      if (types.length > 1) {
-        shiftTypeToMove = types[0]; // Take only the first one (e.g., 'M')
+    const types = requesterShift.shift_type.split(',').map(t => t.trim());
+    
+    if (targetShiftId.startsWith('empty-') && types.length > 1) {
+      const hasA = types.includes('A');
+      const hasN = types.includes('N');
+      
+      if (hasA || hasN) {
+        // Move the whole thing to keep A/N pairing intact
+        shiftTypeToMove = requesterShift.shift_type;
+      } else {
+        // Otherwise, move only the first part as requested previously
+        shiftTypeToMove = types[0];
       }
     }
 
@@ -150,6 +180,20 @@ export function ShiftSwapRequestModal({
       setLoading(false);
     }
   };
+
+  // Helper for UI display
+  const getShiftTypeToDisplay = () => {
+    if (!selectedRequesterShift || !selectedTargetShift) return '';
+    const types = selectedRequesterShift.shift_type.split(',').map(t => t.trim());
+    if (selectedTargetShift.id.startsWith('empty-') && types.length > 1) {
+      if (!types.includes('A') && !types.includes('N')) {
+        return types[0];
+      }
+    }
+    return selectedRequesterShift.shift_type;
+  };
+
+  const isPartialDisplay = getShiftTypeToDisplay() !== selectedRequesterShift?.shift_type;
 
   // Helper to find paired shift
   const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
@@ -226,16 +270,14 @@ export function ShiftSwapRequestModal({
                 <div className="flex-1 text-center">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
                     <span className="text-emerald-600 font-bold text-xs">
-                      {(selectedTargetShift.id.startsWith('empty-') && selectedRequesterShift.shift_type.includes(',')) 
-                        ? selectedRequesterShift.shift_type.split(',')[0] 
-                        : selectedRequesterShift.shift_type}
+                      {getShiftTypeToDisplay()}
                     </span>
                   </div>
                   <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">เวรของคุณ</p>
                   <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
-                  {(selectedTargetShift.id.startsWith('empty-') && selectedRequesterShift.shift_type.includes(',')) ? (
+                  {isPartialDisplay ? (
                     <p className="text-[10px] text-amber-600 mt-1 font-medium">
-                      (ย้ายเฉพาะ {selectedRequesterShift.shift_type.split(',')[0]})
+                      (ย้ายเฉพาะ {getShiftTypeToDisplay()})
                     </p>
                   ) : requesterPairedShift && (
                     <p className="text-[10px] text-emerald-600 mt-1">

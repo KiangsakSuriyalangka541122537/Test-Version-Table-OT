@@ -17,6 +17,15 @@ import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
+import { applyShiftOperations, ShiftOperation } from './lib/[TEST]-shiftOperations';
+
+/**
+ * Safely parses a date string in YYYY-MM-DD format to a Date object at 00:00:00 local time.
+ */
+const parseDateSafe = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
 
 export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -308,48 +317,64 @@ export default function App() {
 
     try {
       const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',') : [];
+      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',').map(t => t.trim()) : [];
+
+      const operations: ShiftOperation[] = [];
 
       if (newShiftType === null) {
-        if (currentShift) {
-          await supabase.from('test_shifts').delete().eq('id', currentShift.id);
+        // Remove all shifts in this cell
+        for (const type of currentTypes) {
+          operations.push({ staffId, date: dateStr, type: type as ShiftType, action: 'remove' });
+          
+          // If removing A, also remove N from next day
+          if (type === 'A') {
+            const nextDay = format(addDays(parseDateSafe(dateStr), 1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: nextDay, type: 'N', action: 'remove' });
+          }
+          // If removing N, also remove A from previous day
+          if (type === 'N') {
+            const prevDay = format(addDays(parseDateSafe(dateStr), -1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: prevDay, type: 'A', action: 'remove' });
+          }
         }
       } else {
-        let newTypes = [...currentTypes];
-        if (newTypes.includes(newShiftType)) {
-          newTypes = newTypes.filter(t => t !== newShiftType);
+        if (currentTypes.includes(newShiftType)) {
+          // Toggle off
+          operations.push({ staffId, date: dateStr, type: newShiftType, action: 'remove' });
+          
+          if (newShiftType === 'A') {
+            const nextDay = format(addDays(parseDateSafe(dateStr), 1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: nextDay, type: 'N', action: 'remove' });
+          }
+          if (newShiftType === 'N') {
+            const prevDay = format(addDays(parseDateSafe(dateStr), -1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: prevDay, type: 'A', action: 'remove' });
+          }
         } else {
+          // Toggle on
           // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
-          if ((newShiftType === 'A' && newTypes.includes('N')) || (newShiftType === 'N' && newTypes.includes('A'))) {
+          if ((newShiftType === 'A' && currentTypes.includes('N')) || (newShiftType === 'N' && currentTypes.includes('A'))) {
             alert('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
             return;
           }
-          newTypes.push(newShiftType);
-        }
-
-        const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
-        newTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-        const newShiftTypeStr = newTypes.join(',');
-
-        if (newTypes.length === 0) {
-          if (currentShift) {
-            await supabase.from('test_shifts').delete().eq('id', currentShift.id);
+          
+          operations.push({ staffId, date: dateStr, type: newShiftType, action: 'add' });
+          
+          if (newShiftType === 'A') {
+            const nextDay = format(addDays(parseDateSafe(dateStr), 1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: nextDay, type: 'N', action: 'add' });
           }
-        } else {
-          if (currentShift) {
-            await supabase.from('test_shifts').update({ shift_type: newShiftTypeStr }).eq('id', currentShift.id);
-          } else {
-            await supabase.from('test_shifts').insert({
-              staff_id: staffId,
-              date: dateStr,
-              shift_type: newShiftTypeStr
-            });
+          if (newShiftType === 'N') {
+            const prevDay = format(addDays(parseDateSafe(dateStr), -1), 'yyyy-MM-dd');
+            operations.push({ staffId, date: prevDay, type: 'A', action: 'add' });
           }
         }
       }
 
+      await applyShiftOperations(operations);
+
       await supabase.from('test_logs').insert({
-        message: `Updated shifts for staff ${staffId} on ${dateStr}`,
+        message: `Updated shifts for staff ${staffId} on ${dateStr} with pairing logic`,
         action_type: 'SHIFT_UPDATE'
       });
 
