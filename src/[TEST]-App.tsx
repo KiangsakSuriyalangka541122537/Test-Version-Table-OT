@@ -173,60 +173,39 @@ export default function App() {
     }
   };
 
-  const [selectedShift, setSelectedShift] = useState<{staffId: string, date: string, shiftType: string, shiftId: string} | null>(null);
-  const [targetCell, setTargetCell] = useState<{staffId: string, date: string} | null>(null);
-
-  const handleCellClick = async (staffId: string, dateStr: string, currentShifts: ShiftType[]) => {
+  const handleCellClick = (staffId: string, dateStr: string, currentShifts: ShiftType[]) => {
     // Admins can edit if not published
     if (isAdmin && !rosterStatus?.is_published) {
       setEditingCell({ staffId, dateStr, currentShifts });
       setIsShiftEditOpen(true);
-      return;
     }
+  };
 
-    // Swap/Move logic for all users
-    const currentUserStaff = staffList.find(s => s.name === user?.name);
-    if (!currentUserStaff) {
-      alert('กรุณาเข้าสู่ระบบก่อนดำเนินการ');
-      return;
-    }
-
-    const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-
-    if (!shiftToSwap) {
-      // 1. Select Source (must be own shift)
-      if (staffId !== currentUserStaff.id) {
-        alert('คุณสามารถเลือกได้เฉพาะเวรของตนเองเท่านั้น');
-        return;
-      }
-      if (!shift) {
-        alert('ไม่พบเวรในวันที่เลือก');
-        return;
-      }
-      setShiftToSwap(shift);
-    } else {
-      // 2. Select Target
-      if (staffId === currentUserStaff.id) {
-        // Clicking own row again -> Deselect
-        setShiftToSwap(null);
-        setTargetShiftToSwap(null);
-      } else {
-        // Clicking someone else's row
-        const targetShift: Shift = shift || {
-          id: `empty-${staffId}-${dateStr}`,
-          staff_id: staffId,
+  const handleShiftSwapRequest = (staff: Staff, dateStr: string, shift: Shift | null) => {
+    if (!shift) {
+      // If clicking an empty cell, treat as target
+      if (shiftToSwap) {
+        setTargetShiftToSwap({
+          id: `empty-${staff.id}-${dateStr}`,
+          staff_id: staff.id,
           date: dateStr,
           shift_type: 'O'
-        };
+        });
+      }
+      return;
+    }
 
-        // Check if target shift already has multiple shifts (contains ',')
-        if (targetShift.shift_type.includes(',')) {
-          alert('ไม่สามารถย้ายเวรไปยังช่องที่มีเวรซ้อนกันอยู่ได้');
-          return;
-        }
-
-        setTargetShiftToSwap(targetShift);
-        setRequesterStaff(currentUserStaff);
+    if (!shiftToSwap) {
+      // Select source
+      setShiftToSwap(shift);
+      setRequesterStaff(staff);
+    } else {
+      // Select target
+      if (shiftToSwap.id === shift.id) {
+        setShiftToSwap(null);
+        setRequesterStaff(null);
+      } else {
+        setTargetShiftToSwap(shift);
       }
     }
   };
@@ -340,10 +319,6 @@ export default function App() {
         if (newTypes.includes(newShiftType)) {
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
-          if (newTypes.length >= 2) {
-            alert('ไม่สามารถมีมากกว่า 2 เวรในช่องเดียวกันได้');
-            return;
-          }
           newTypes.push(newShiftType);
         }
 
@@ -693,7 +668,8 @@ export default function App() {
                   isPublished={rosterStatus?.is_published ?? false}
                   user={user}
                   onCellClick={handleCellClick}
-                  onShiftSwapRequest={() => {}}
+                  onShiftSwapRequest={handleShiftSwapRequest}
+                  selectedShiftForMove={null}
                   shiftToSwap={shiftToSwap}
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
