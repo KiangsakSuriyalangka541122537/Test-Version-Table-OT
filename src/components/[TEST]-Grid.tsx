@@ -22,10 +22,10 @@ interface GridProps {
 }
 
 const shiftColors: Record<ShiftType, string> = {
-  M: 'bg-blue-50 text-blue-700',
-  A: 'bg-orange-50 text-orange-700',
-  N: 'bg-purple-50 text-purple-700',
-  O: 'bg-slate-50 text-slate-500',
+  M: 'text-blue-600',
+  A: 'text-orange-600',
+  N: 'text-purple-600',
+  O: 'text-slate-400',
 };
 
 const shiftLabels: Record<ShiftType, string> = {
@@ -167,84 +167,45 @@ export function Grid({
                     )
                   );
 
-                  return (
-                    <td
-                      key={dateStr}
-                      onMouseEnter={() => {
-                        // Find all swaps involving THIS cell
-                        const cellSwaps = approvedSwaps.filter(s => 
-                          (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
-                          (s.target_staff_id === staff.id && s.target_date === dateStr)
-                        );
-                        if (cellSwaps.length > 0) {
-                          setHoveredSwapIds(cellSwaps.map(s => s.id));
-                        }
-                      }}
-                      onMouseLeave={() => setHoveredSwapIds([])}
-                      onClick={() => {
-                        const staffObj = staffList.find(s => s.id === staff.id);
-                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
-                        
-                        // If admin and NOT published, allow direct editing
-                        if (isAdmin && !isPublished) {
-                          onCellClick(staff.id, dateStr, currentShifts);
-                        } 
-                        // If logged in (admin or user) and published (or not admin), allow swap request
-                        else if (user && staffObj) {
-                          onShiftSwapRequest(staffObj, dateStr, shiftObj);
-                        }
-                      }}
-                      className={clsx(
-                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
-                        (isAdmin && !isPublished) && "hover:bg-slate-100/50",
-                        isTdy && currentShifts.length === 0 && "bg-indigo-50/20",
-                        isWknd && currentShifts.length === 0 && "bg-rose-50/20",
-                        isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
-                        isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
-                        isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50",
-                        isPendingSwap && "bg-yellow-200 ring-2 ring-yellow-500 ring-inset z-10 shadow-lg shadow-yellow-100",
-                        isHoveredSwap && "bg-blue-100 ring-2 ring-blue-500 ring-inset z-20 shadow-lg shadow-blue-200"
-                      )}
-                    >
-                      {currentShifts.length > 0 ? (
-                        <div className={clsx(
-                          "flex flex-col items-center justify-center w-full rounded-md overflow-hidden border transition-all duration-300",
-                          currentShifts.length === 1 ? "min-h-[36px]" : 
-                          currentShifts.length === 2 ? "min-h-[72px]" : "min-h-[100px]",
-                          currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
-                        )}>
-                          {currentShifts.map((shiftType, idx) => (
-                            <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1",
-                              idx > 0 && "border-t border-slate-200",
-                              shiftColors[shiftType],
-                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                            )}>
-                              {shiftLabels[shiftType]}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className={clsx(
-                          "w-full h-7 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors",
-                          isPendingSwap && "text-yellow-600 font-bold bg-yellow-50/50 rounded-md ring-1 ring-yellow-300",
-                          isHoveredSwap && "text-blue-600 font-bold bg-blue-50/50 rounded-md ring-1 ring-blue-300"
-                        )}>
-                          {isPendingSwap ? (
-                            <span className="text-[8px] text-yellow-700">รอแลก</span>
-                          ) : isHoveredSwap ? (
-                            <span className="text-[8px] text-blue-700">แลกแล้ว</span>
+                    return (
+                      <td
+                        key={dateStr}
+                        onClick={() => {
+                          const staffObj = staffList.find(s => s.id === staff.id);
+                          const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
+                          
+                          if (isAdmin && !isPublished) {
+                            onCellClick(staff.id, dateStr, currentShifts);
+                          } else if (user && staffObj) {
+                            onShiftSwapRequest(staffObj, dateStr, shiftObj);
+                          }
+                        }}
+                        className={clsx(
+                          "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
+                          isTdy && "bg-indigo-50/30",
+                          isWknd && "bg-rose-50/10",
+                          isSelectedForMove && "bg-indigo-100",
+                          isSelectedRequester && "bg-emerald-100",
+                          isSelectedTarget && "bg-amber-100",
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
+                          {currentShifts.length > 0 ? (
+                            currentShifts.map((shiftType, idx) => (
+                              <span 
+                                key={`${dateStr}-${idx}`} 
+                                className={clsx("font-bold text-sm", shiftColors[shiftType])}
+                              >
+                                {shiftLabels[shiftType]}
+                                {idx < currentShifts.length - 1 && <span className="text-slate-300 mx-0.5">|</span>}
+                              </span>
+                            ))
                           ) : (
-                            <div className="w-1 h-1 rounded-full bg-current"></div>
+                            <span className="text-slate-200 text-[10px]">•</span>
                           )}
                         </div>
-                      )}
-                    </td>
-                  );
+                      </td>
+                    );
                 })}
                 <td className="px-1 py-3 whitespace-nowrap text-center bg-indigo-50/10 border-l border-slate-100">
                   <span className="text-sm font-bold text-indigo-600">{totalShifts}</span>

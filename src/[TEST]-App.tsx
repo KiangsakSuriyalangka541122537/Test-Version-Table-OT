@@ -176,148 +176,20 @@ export default function App() {
   const handleCellClick = async (staffId: string, dateStr: string, currentShifts: ShiftType[]) => {
     if (!isAdmin) return;
 
-    if (selectedShiftForMove) {
-      if (selectedShiftForMove.staffId === staffId && selectedShiftForMove.dateStr === dateStr) {
-        // Clicked the same cell again -> Open Edit Modal
-        setSelectedShiftForMove(null);
-        setEditingCell({ staffId, dateStr, currentShifts });
-        setIsShiftEditOpen(true);
-        return;
-      }
-
-      // Perform Move or Swap
-      setLoading(true);
-      try {
-        const sourceShift = shifts.find(s => s.staff_id === selectedShiftForMove.staffId && s.date === selectedShiftForMove.dateStr);
-        const targetShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-
-        if (sourceShift && targetShift) {
-          // Check if merge is possible
-          const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
-          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
-          
-          // Combine unique types
-          let mergedTypes = [...targetTypes, ...sourceTypes];
-          mergedTypes = Array.from(new Set(mergedTypes));
-          
-          const canMerge = mergedTypes.length <= 3;
-          
-          let action = '';
-          
-          if (canMerge) {
-             // Auto-merge if moving 'M' into a cell that doesn't have 'M'
-             if (selectedShiftForMove.shiftType === 'M' && !targetTypes.includes('M')) {
-                action = 'merge';
-             } else {
-                // If merge is possible, prioritize merge
-                if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
-                   action = 'merge';
-                } else {
-                   if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                      action = 'swap';
-                   }
-                }
-             }
-          } else {
-             // Cannot merge due to max 3 shifts constraint
-             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                action = 'swap';
-             }
-          }
-
-          if (action === 'merge') {
-            const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
-            mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-            const newShiftTypeStr = mergedTypes.join(',');
-
-            await supabase.from('test_shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
-            await supabase.from('test_shifts').delete().eq('id', sourceShift.id);
-          } else if (action === 'swap') {
-            // Swap: Update source to temp date, target to source, source to target
-            const tempDate = '2000-01-01';
-            await supabase.from('test_shifts').update({ date: tempDate }).eq('id', sourceShift.id);
-            await supabase.from('test_shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
-            await supabase.from('test_shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
-          }
-        } else if (sourceShift && !targetShift) {
-          // Move
-          await supabase.from('test_shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
-        }
-        
-        await fetchData(); // Refresh shifts
-      } catch (error) {
-        console.error("Error moving/swapping shift:", error);
-        alert("เกิดข้อผิดพลาดในการย้าย/สลับเวร");
-      } finally {
-        setLoading(false);
-        setSelectedShiftForMove(null);
-      }
-    } else {
-      if (currentShifts.length === 1) {
-        // Select for move/swap
-        setSelectedShiftForMove({ staffId, dateStr, shiftType: currentShifts[0] });
-      } else if (currentShifts.length > 1) {
-        // If multiple shifts, open edit modal directly
-        setEditingCell({ staffId, dateStr, currentShifts });
-        setIsShiftEditOpen(true);
-      } else {
-        // Open edit modal to add new shift
-        setEditingCell({ staffId, dateStr, currentShifts: [] });
-        setIsShiftEditOpen(true);
-      }
-    }
+    // Simple toggle or open modal logic - stripped of complex conditions
+    setEditingCell({ staffId, dateStr, currentShifts });
+    setIsShiftEditOpen(true);
   };
 
   const handleRequestShiftSwap = (staff: Staff, dateStr: string, shift: Shift | null) => {
-    // If admin and NOT published, they use edit modal (handled in Grid)
-    // If admin AND published, they should be able to swap like a user
+    // Basic request logic - stripped of complex conditions
     if (isAdmin && !rosterStatus?.is_published) return; 
     
     const currentUserStaff = staffList.find(s => s.name === user?.name);
-    if (!currentUserStaff) {
-      alert('ไม่พบข้อมูลพนักงานของคุณในระบบ กรุณาติดต่อผู้ดูแลระบบ');
-      return;
-    }
+    if (!currentUserStaff) return;
 
     setRequesterStaff(currentUserStaff);
-
-    if (staff.id === currentUserStaff.id) {
-      // Clicking own row
-      if (!shift) {
-        // Clicking empty cell in own row -> can't be a source for swap
-        return;
-      }
-      if (shiftToSwap?.id === shift.id) {
-        setShiftToSwap(null);
-      } else {
-        setShiftToSwap(shift);
-      }
-    } else {
-      // Clicking someone else's row
-      if (shift) {
-        // Clicking an existing shift
-        if (targetShiftToSwap?.id === shift.id) {
-          setTargetShiftToSwap(null);
-        } else {
-          setTargetShiftToSwap(shift);
-        }
-      } else {
-        // Clicking an empty cell -> Create a "virtual" shift object for the target
-        // This allows requesting to move to an empty slot
-        const virtualShift: Shift = {
-          id: `empty-${staff.id}-${dateStr}`,
-          staff_id: staff.id,
-          date: dateStr,
-          shift_type: 'O' // Use 'O' (Off) or some indicator for empty
-        };
-        
-        if (targetShiftToSwap?.id === virtualShift.id) {
-          setTargetShiftToSwap(null);
-        } else {
-          setTargetShiftToSwap(virtualShift);
-        }
-      }
-    }
+    // Logic for selecting shifts to swap will be redefined later
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
@@ -362,32 +234,21 @@ export default function App() {
     const { staffId, dateStr } = editingCell;
 
     try {
-      // Find current shift for this cell
       const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
       const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',') : [];
 
-      // 1. Handle Deletion (null)
       if (newShiftType === null) {
         if (currentShift) {
           await supabase.from('test_shifts').delete().eq('id', currentShift.id);
         }
-      } 
-      else {
-        // 2. Toggle Logic: If exists, remove. If not, add.
+      } else {
         let newTypes = [...currentTypes];
         if (newTypes.includes(newShiftType)) {
-          // Remove specific shift
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
-          // Add new shift
-          if (newTypes.length >= 3) {
-            alert('สามารถลงเวรได้สูงสุด 3 กะต่อวันเท่านั้น');
-            return;
-          }
           newTypes.push(newShiftType);
         }
 
-        // Sort the types so M is always first, then A, then N
         const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
         newTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
         const newShiftTypeStr = newTypes.join(',');
@@ -406,90 +267,17 @@ export default function App() {
               shift_type: newShiftTypeStr
             });
           }
-
-          // Special logic for A and N auto-adding linked shifts (only if we ADDED a shift)
-          if (!currentTypes.includes(newShiftType)) {
-            if (newShiftType === 'A') {
-               const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
-               const otherNight = shifts.find(s => s.date === nextDay && s.shift_type?.includes('N') && s.staff_id !== staffId);
-               if (otherNight) {
-                 if (!confirm(`วันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว (${otherNight.staff_id}) คุณต้องการลงเวรบ่ายโดยไม่ลงเวรดึกวันถัดไปหรือไม่?`)) {
-                   // Rollback the A we just added if they cancel
-                   if (currentShift) {
-                     await supabase.from('test_shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
-                   } else {
-                     await supabase.from('test_shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
-                   }
-                   return;
-                 }
-               } else {
-                 // Check if N next day already exists for THIS staff
-                 const myNextNight = shifts.find(s => s.date === nextDay && s.staff_id === staffId);
-                 if (!myNextNight || !myNextNight.shift_type?.includes('N')) {
-                   const nextDayTypes = myNextNight && myNextNight.shift_type ? myNextNight.shift_type.split(',') : [];
-                   nextDayTypes.push('N');
-                   nextDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-                   const nextDayStr = nextDayTypes.join(',');
-                   
-                   if (myNextNight) {
-                     await supabase.from('test_shifts').update({ shift_type: nextDayStr }).eq('id', myNextNight.id);
-                   } else {
-                     await supabase.from('test_shifts').insert({
-                       staff_id: staffId,
-                       date: nextDay,
-                       shift_type: 'N'
-                     });
-                   }
-                 }
-               }
-            }
-            else if (newShiftType === 'N') {
-              const prevDay = format(addDays(new Date(dateStr), -1), 'yyyy-MM-dd');
-              const otherNight = shifts.find(s => s.date === dateStr && s.shift_type?.includes('N') && s.staff_id !== staffId);
-              if (otherNight) {
-                alert(`ไม่สามารถลงเวรดึกได้ เนื่องจากวันนี้มีผู้ลงเวรดึกแล้ว`);
-                // Rollback the N we just added
-                if (currentShift) {
-                  await supabase.from('test_shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
-                } else {
-                  await supabase.from('test_shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
-                }
-                return;
-              }
-               
-              const myPrevA = shifts.find(s => s.date === prevDay && s.staff_id === staffId);
-              if (!myPrevA || !myPrevA.shift_type?.includes('A')) {
-                const prevDayTypes = myPrevA && myPrevA.shift_type ? myPrevA.shift_type.split(',') : [];
-                prevDayTypes.push('A');
-                prevDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-                const prevDayStr = prevDayTypes.join(',');
-                
-                if (myPrevA) {
-                  await supabase.from('test_shifts').update({ shift_type: prevDayStr }).eq('id', myPrevA.id);
-                } else {
-                  await supabase.from('test_shifts').insert({
-                    staff_id: staffId,
-                    date: prevDay,
-                    shift_type: 'A'
-                  });
-                }
-              }
-            }
-          }
         }
       }
 
-      // Log action
       await supabase.from('test_logs').insert({
-        message: `Admin updated shifts for staff ${staffId} on ${dateStr}. Action: ${newShiftType}`,
+        message: `Updated shifts for staff ${staffId} on ${dateStr}`,
         action_type: 'SHIFT_UPDATE'
       });
 
-      // Refresh data
       fetchData();
     } catch (error) {
       console.error('Error saving shift:', error);
-      alert('Failed to save shift. Please try again.');
     }
   };
 
