@@ -73,7 +73,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     
     try {
       const { data, error } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .select('*')
         .eq('target_staff_id', currentUserStaff.id)
         .eq('status', ShiftSwapStatus.WAITING_TARGET)
@@ -113,7 +113,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
       // 2. Update request status to APPROVED
       const { error } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .update({ 
           status: ShiftSwapStatus.APPROVED, 
           updated_at: new Date().toISOString() 
@@ -122,7 +122,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
       if (error) throw error;
 
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Staff ${user.name} accepted move request ${request.id}. Shifts updated immediately.`,
         action_type: 'SHIFT_MOVE_COMPLETED'
       });
@@ -143,7 +143,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .update({ 
           status: ShiftSwapStatus.REJECTED, 
           updated_at: new Date().toISOString() 
@@ -152,7 +152,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
       if (error) throw error;
 
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Staff ${user.name} rejected swap request ${request.id} from ${getStaffName(request.requester_staff_id)}`,
         action_type: 'SHIFT_SWAP_REJECTED_BY_TARGET'
       });

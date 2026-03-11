@@ -55,7 +55,7 @@ export default function App() {
     const cleanupDuplicates = async () => {
       try {
         // 1. Migration: Update น.ส. to นางสาว and remove spaces after prefixes
-        const { data: staffToUpdate } = await supabase.from('test_env.staff').select('id, name');
+        const { data: staffToUpdate } = await supabase.from('staff').select('id, name');
         if (staffToUpdate) {
           for (const s of staffToUpdate) {
             let newName = s.name;
@@ -67,15 +67,15 @@ export default function App() {
             newName = newName.replace(/^(นาย|นางสาว|นาง)\s+/g, '$1');
             
             if (newName !== s.name) {
-              await supabase.from('test_env.staff').update({ name: newName }).eq('id', s.id);
+              await supabase.from('staff').update({ name: newName }).eq('id', s.id);
               // Also update users table if exists
-              await supabase.from('test_env.users').update({ name: newName }).eq('name', s.name);
+              await supabase.from('users').update({ name: newName }).eq('name', s.name);
             }
           }
         }
 
         // 2. Cleanup duplicates
-        const { data: staffData } = await supabase.from('test_env.staff').select('*');
+        const { data: staffData } = await supabase.from('staff').select('*');
         if (staffData) {
           const seen = new Set();
           const duplicates: string[] = [];
@@ -90,7 +90,7 @@ export default function App() {
           });
 
           if (duplicates.length > 0) {
-            await supabase.from('test_env.staff').delete().in('id', duplicates);
+            await supabase.from('staff').delete().in('id', duplicates);
             fetchData();
           }
         }
@@ -107,7 +107,7 @@ export default function App() {
     try {
       // Fetch Staff
       const { data: staffData, error: staffError } = await supabase
-        .from('test_env.staff')
+        .from('staff')
         .select('*')
         .order('created_at');
       if (staffError) throw staffError;
@@ -128,7 +128,7 @@ export default function App() {
       const endDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
       
       const { data: shiftsData, error: shiftsError } = await supabase
-        .from('test_env.shifts')
+        .from('shifts')
         .select('*')
         .gte('date', startDate)
         .lte('date', endDate);
@@ -137,7 +137,7 @@ export default function App() {
 
       // Fetch Roster Status
       const { data: statusData, error: statusError } = await supabase
-        .from('test_env.roster_status')
+        .from('roster_status')
         .select('*')
         .eq('month_key', monthKey)
         .single();
@@ -149,7 +149,7 @@ export default function App() {
 
       // Fetch Pending Swaps
       const { data: pendingSwapsData, error: pendingSwapsError } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .select('*')
         .in('status', [ShiftSwapStatus.PENDING, ShiftSwapStatus.WAITING_TARGET]);
       
@@ -158,7 +158,7 @@ export default function App() {
 
       // Fetch Approved Swaps
       const { data: approvedSwapsData, error: approvedSwapsError } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .select('*')
         .eq('status', ShiftSwapStatus.APPROVED);
       
@@ -230,18 +230,18 @@ export default function App() {
             mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
             const newShiftTypeStr = mergedTypes.join(',');
 
-            await supabase.from('test_env.shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
-            await supabase.from('test_env.shifts').delete().eq('id', sourceShift.id);
+            await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
+            await supabase.from('shifts').delete().eq('id', sourceShift.id);
           } else if (action === 'swap') {
             // Swap: Update source to temp date, target to source, source to target
             const tempDate = '2000-01-01';
-            await supabase.from('test_env.shifts').update({ date: tempDate }).eq('id', sourceShift.id);
-            await supabase.from('test_env.shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
-            await supabase.from('test_env.shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+            await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
+            await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
+            await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
           }
         } else if (sourceShift && !targetShift) {
           // Move
-          await supabase.from('test_env.shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
         }
         
         await fetchData(); // Refresh shifts
@@ -327,7 +327,7 @@ export default function App() {
         ? ShiftSwapStatus.WAITING_TARGET 
         : ShiftSwapStatus.PENDING;
       
-      const { error } = await supabase.from('test_env.shift_swap_requests').insert({
+      const { error } = await supabase.from('shift_swap_requests').insert({
         ...request,
         target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
           ? request.target_shift_id 
@@ -339,7 +339,7 @@ export default function App() {
         throw error;
       }
 
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
         action_type: 'SHIFT_SWAP_REQUEST_SENT'
       });
@@ -369,7 +369,7 @@ export default function App() {
       // 1. Handle Deletion (null)
       if (newShiftType === null) {
         if (currentShift) {
-          await supabase.from('test_env.shifts').delete().eq('id', currentShift.id);
+          await supabase.from('shifts').delete().eq('id', currentShift.id);
         }
       } 
       else {
@@ -394,13 +394,13 @@ export default function App() {
 
         if (newTypes.length === 0) {
           if (currentShift) {
-            await supabase.from('test_env.shifts').delete().eq('id', currentShift.id);
+            await supabase.from('shifts').delete().eq('id', currentShift.id);
           }
         } else {
           if (currentShift) {
-            await supabase.from('test_env.shifts').update({ shift_type: newShiftTypeStr }).eq('id', currentShift.id);
+            await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', currentShift.id);
           } else {
-            await supabase.from('test_env.shifts').insert({
+            await supabase.from('shifts').insert({
               staff_id: staffId,
               date: dateStr,
               shift_type: newShiftTypeStr
@@ -416,9 +416,9 @@ export default function App() {
                  if (!confirm(`วันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว (${otherNight.staff_id}) คุณต้องการลงเวรบ่ายโดยไม่ลงเวรดึกวันถัดไปหรือไม่?`)) {
                    // Rollback the A we just added if they cancel
                    if (currentShift) {
-                     await supabase.from('test_env.shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
+                     await supabase.from('shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
                    } else {
-                     await supabase.from('test_env.shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
+                     await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
                    }
                    return;
                  }
@@ -432,9 +432,9 @@ export default function App() {
                    const nextDayStr = nextDayTypes.join(',');
                    
                    if (myNextNight) {
-                     await supabase.from('test_env.shifts').update({ shift_type: nextDayStr }).eq('id', myNextNight.id);
+                     await supabase.from('shifts').update({ shift_type: nextDayStr }).eq('id', myNextNight.id);
                    } else {
-                     await supabase.from('test_env.shifts').insert({
+                     await supabase.from('shifts').insert({
                        staff_id: staffId,
                        date: nextDay,
                        shift_type: 'N'
@@ -450,9 +450,9 @@ export default function App() {
                 alert(`ไม่สามารถลงเวรดึกได้ เนื่องจากวันนี้มีผู้ลงเวรดึกแล้ว`);
                 // Rollback the N we just added
                 if (currentShift) {
-                  await supabase.from('test_env.shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
+                  await supabase.from('shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
                 } else {
-                  await supabase.from('test_env.shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
+                  await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
                 }
                 return;
               }
@@ -465,9 +465,9 @@ export default function App() {
                 const prevDayStr = prevDayTypes.join(',');
                 
                 if (myPrevA) {
-                  await supabase.from('test_env.shifts').update({ shift_type: prevDayStr }).eq('id', myPrevA.id);
+                  await supabase.from('shifts').update({ shift_type: prevDayStr }).eq('id', myPrevA.id);
                 } else {
-                  await supabase.from('test_env.shifts').insert({
+                  await supabase.from('shifts').insert({
                     staff_id: staffId,
                     date: prevDay,
                     shift_type: 'A'
@@ -480,7 +480,7 @@ export default function App() {
       }
 
       // Log action
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Admin updated shifts for staff ${staffId} on ${dateStr}. Action: ${newShiftType}`,
         action_type: 'SHIFT_UPDATE'
       });
@@ -505,7 +505,7 @@ export default function App() {
     const newStatus = !rosterStatus?.is_published;
     
     try {
-      await supabase.from('test_env.roster_status').upsert({
+      await supabase.from('roster_status').upsert({
         month_key: monthKey,
         is_published: newStatus,
         original_assignments: newStatus ? shifts : rosterStatus?.original_assignments
@@ -521,7 +521,7 @@ export default function App() {
         original_assignments: newStatus ? shifts : null
       });
       
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Admin ${newStatus ? 'published' : 'unpublished'} roster for ${monthKey}`,
         action_type: 'ROSTER_STATUS_UPDATE'
       });
@@ -544,7 +544,7 @@ export default function App() {
       
       // 1. Delete all shifts for the current month
       const { error: deleteError } = await supabase
-        .from('test_env.shifts')
+        .from('shifts')
         .delete()
         .gte('date', startDate)
         .lte('date', endDate);
@@ -553,7 +553,7 @@ export default function App() {
 
       // 1.5 Delete all swap requests for the current month
       const currentMonthStr = format(currentMonth, 'yyyy-MM');
-      const { data: allSwaps } = await supabase.from('test_env.shift_swap_requests').select('id, requester_date, target_date');
+      const { data: allSwaps } = await supabase.from('shift_swap_requests').select('id, requester_date, target_date');
       
       if (allSwaps) {
         const swapsToDelete = allSwaps.filter(s => 
@@ -567,7 +567,7 @@ export default function App() {
           for (let i = 0; i < idsToDelete.length; i += 100) {
             const chunk = idsToDelete.slice(i, i + 100);
             const { error: deleteSwapsError } = await supabase
-              .from('test_env.shift_swap_requests')
+              .from('shift_swap_requests')
               .delete()
               .in('id', chunk);
               
@@ -583,7 +583,7 @@ export default function App() {
       setLastActionTimestamp(Date.now());
 
       // 2. Set roster status to Draft (is_published: false)
-      const { error: statusError } = await supabase.from('test_env.roster_status').upsert({
+      const { error: statusError } = await supabase.from('roster_status').upsert({
         month_key: monthKey,
         is_published: false,
         original_assignments: null
@@ -592,7 +592,7 @@ export default function App() {
       if (statusError) throw statusError;
 
       // 3. Log action
-      await supabase.from('test_env.logs').insert({
+      await supabase.from('logs').insert({
         message: `Admin reset all shifts for ${monthKey}`,
         action_type: 'ROSTER_RESET'
       });

@@ -38,7 +38,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     try {
       // In a real app, use Supabase Auth. For this demo, we check the users table directly.
       const { data, error } = await supabase
-        .from('test_env.users')
+        .from('users')
         .select('*')
         .eq('username', username)
         .eq('password', password)

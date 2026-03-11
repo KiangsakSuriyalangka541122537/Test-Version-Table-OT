@@ -41,13 +41,13 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
       ];
 
       // Delete all current staff and users to start fresh as requested
-      await supabase.from('test_env.staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('test_env.users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       for (const s of defaultStaff) {
         // Insert Staff
         const { data: staffData, error: staffError } = await supabase
-          .from('test_env.staff')
+          .from('staff')
           .insert([{ name: s.name }])
           .select()
           .single();
@@ -56,7 +56,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
 
         // Insert User
         const { error: userError } = await supabase
-          .from('test_env.users')
+          .from('users')
           .insert([{
             username: s.username,
             password: s.password,
@@ -89,7 +89,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
     try {
       // 1. Create Staff
       const { data: staffData, error: staffError } = await supabase
-        .from('test_env.staff')
+        .from('staff')
         .insert([{ name: newStaffName }])
         .select()
         .single();
@@ -98,7 +98,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
 
       // 2. Create User
       const { error: userError } = await supabase
-        .from('test_env.users')
+        .from('users')
         .insert([{
           username,
           password,
@@ -129,7 +129,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
     try {
       // 1. Delete from staff
       const { error: deleteStaffError } = await supabase
-        .from('test_env.staff')
+        .from('staff')
         .delete()
         .eq('id', id);
 
@@ -137,7 +137,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
 
       // 2. Delete from users (by name, since we don't have a direct link in this schema)
       const { error: deleteUserError } = await supabase
-        .from('test_env.users')
+        .from('users')
         .delete()
         .eq('name', name);
 

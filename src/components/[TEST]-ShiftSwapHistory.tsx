@@ -37,7 +37,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       // "History of shift swaps" usually implies recent activity.
       
       const { data, error } = await supabase
-        .from('test_env.shift_swap_requests')
+        .from('shift_swap_requests')
         .select('*')
         .eq('status', ShiftSwapStatus.APPROVED)
         .order('updated_at', { ascending: false })

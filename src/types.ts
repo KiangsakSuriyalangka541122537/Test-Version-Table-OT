@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'staff';
 }
 
 export interface Staff {
