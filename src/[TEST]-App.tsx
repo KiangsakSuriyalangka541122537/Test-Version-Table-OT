@@ -173,23 +173,98 @@ export default function App() {
     }
   };
 
-  const handleCellClick = async (staffId: string, dateStr: string, currentShifts: ShiftType[]) => {
-    if (!isAdmin) return;
+  const [selectedShift, setSelectedShift] = useState<{staffId: string, date: string, shiftType: string, shiftId: string} | null>(null);
+  const [targetCell, setTargetCell] = useState<{staffId: string, date: string} | null>(null);
 
-    // Simple toggle or open modal logic - stripped of complex conditions
-    setEditingCell({ staffId, dateStr, currentShifts });
-    setIsShiftEditOpen(true);
+  const handleCellClick = async (staffId: string, dateStr: string, currentShifts: ShiftType[]) => {
+    // Admins can edit if not published
+    if (isAdmin && !rosterStatus?.is_published) {
+      setEditingCell({ staffId, dateStr, currentShifts });
+      setIsShiftEditOpen(true);
+      return;
+    }
+
+    // Swap/Move logic for all users
+    if (!selectedShift) {
+      // Select source: only if it's the current user's shift
+      const currentUserStaff = staffList.find(s => s.name === user?.name);
+      if (!currentUserStaff || currentUserStaff.id !== staffId) {
+        alert('คุณสามารถเลือกได้เฉพาะเวรของตนเองเท่านั้น');
+        return;
+      }
+
+      if (currentShifts.length > 0) {
+        const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+        if (shift) {
+          setSelectedShift({ staffId, date: dateStr, shiftType: shift.shift_type, shiftId: shift.id });
+        }
+      }
+    } else {
+      // Select target
+      if (selectedShift.staffId === staffId && selectedShift.date === dateStr) {
+        // Deselect
+        setSelectedShift(null);
+      } else {
+        // Request swap
+        await createSwapRequest(selectedShift, { staffId, date: dateStr });
+        setSelectedShift(null);
+      }
+    }
   };
 
-  const handleRequestShiftSwap = (staff: Staff, dateStr: string, shift: Shift | null) => {
-    // Basic request logic - stripped of complex conditions
-    if (isAdmin && !rosterStatus?.is_published) return; 
-    
-    const currentUserStaff = staffList.find(s => s.name === user?.name);
-    if (!currentUserStaff) return;
+  const createSwapRequest = async (source: {staffId: string, date: string, shiftType: string, shiftId: string}, target: {staffId: string, date: string}) => {
+    // 1. Create request in DB
+    const { data, error } = await supabase.from('test_shift_swap_requests').insert({
+      requester_staff_id: source.staffId,
+      requester_shift_id: source.shiftId,
+      requester_date: source.date,
+      requester_shift_type: source.shiftType,
+      target_staff_id: target.staffId,
+      target_date: target.date,
+      status: ShiftSwapStatus.WAITING_TARGET
+    }).select();
 
-    setRequesterStaff(currentUserStaff);
-    // Logic for selecting shifts to swap will be redefined later
+    if (error) {
+      console.error('Error creating swap request:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างคำขอ');
+      return;
+    }
+    alert('ส่งคำขอแลกเวรเรียบร้อยแล้ว รอผู้รับปลายทางยืนยัน');
+  };
+
+  const acceptSwapRequest = async (requestId: string) => {
+    // 1. Get request
+    const { data: request, error: fetchError } = await supabase.from('test_shift_swap_requests').select('*').eq('id', requestId).single();
+    if (fetchError || !request) return;
+
+    // 2. Perform move/merge
+    const targetShift = shifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
+    
+    if (targetShift) {
+      // Merge
+      const targetTypes = targetShift.shift_type.split(',');
+      const sourceTypes = request.requester_shift_type.split(',');
+      const mergedTypes = Array.from(new Set([...targetTypes, ...sourceTypes]));
+      const newShiftTypeStr = mergedTypes.join(',');
+
+      await supabase.from('test_shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
+    } else {
+      // Move
+      await supabase.from('test_shifts').insert({
+        staff_id: request.target_staff_id,
+        date: request.target_date,
+        shift_type: request.requester_shift_type
+      });
+    }
+
+    // 3. Delete source
+    await supabase.from('test_shifts').delete().eq('id', request.requester_shift_id);
+
+    // 4. Update request status
+    await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
+    
+    fetchData();
+    alert('ยอมรับการแลกเวรเรียบร้อยแล้ว');
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
@@ -595,10 +670,10 @@ export default function App() {
                   isPublished={rosterStatus?.is_published ?? false}
                   user={user}
                   onCellClick={handleCellClick}
-                  onShiftSwapRequest={handleRequestShiftSwap}
-                  selectedShiftForMove={selectedShiftForMove}
-                  shiftToSwap={shiftToSwap}
-                  targetShiftToSwap={targetShiftToSwap}
+                  onShiftSwapRequest={() => {}}
+                  selectedShiftForMove={selectedShift ? { staffId: selectedShift.staffId, dateStr: selectedShift.date, shiftType: selectedShift.shiftType } : null}
+                  shiftToSwap={null}
+                  targetShiftToSwap={null}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
                 />
