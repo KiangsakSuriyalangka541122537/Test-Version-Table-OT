@@ -185,29 +185,41 @@ export default function App() {
     }
 
     // Swap/Move logic for all users
-    if (!selectedShift) {
-      // Select source: only if it's the current user's shift
-      const currentUserStaff = staffList.find(s => s.name === user?.name);
-      if (!currentUserStaff || currentUserStaff.id !== staffId) {
+    const currentUserStaff = staffList.find(s => s.name === user?.name);
+    if (!currentUserStaff) {
+      alert('กรุณาเข้าสู่ระบบก่อนดำเนินการ');
+      return;
+    }
+
+    const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+
+    if (!shiftToSwap) {
+      // 1. Select Source (must be own shift)
+      if (staffId !== currentUserStaff.id) {
         alert('คุณสามารถเลือกได้เฉพาะเวรของตนเองเท่านั้น');
         return;
       }
-
-      if (currentShifts.length > 0) {
-        const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-        if (shift) {
-          setSelectedShift({ staffId, date: dateStr, shiftType: shift.shift_type, shiftId: shift.id });
-        }
+      if (!shift) {
+        alert('ไม่พบเวรในวันที่เลือก');
+        return;
       }
+      setShiftToSwap(shift);
     } else {
-      // Select target
-      if (selectedShift.staffId === staffId && selectedShift.date === dateStr) {
-        // Deselect
-        setSelectedShift(null);
+      // 2. Select Target
+      if (staffId === currentUserStaff.id) {
+        // Clicking own row again -> Deselect
+        setShiftToSwap(null);
+        setTargetShiftToSwap(null);
       } else {
-        // Request swap
-        await createSwapRequest(selectedShift, { staffId, date: dateStr });
-        setSelectedShift(null);
+        // Clicking someone else's row
+        const targetShift: Shift = shift || {
+          id: `empty-${staffId}-${dateStr}`,
+          staff_id: staffId,
+          date: dateStr,
+          shift_type: 'O'
+        };
+        setTargetShiftToSwap(targetShift);
+        setRequesterStaff(currentUserStaff);
       }
     }
   };
@@ -671,9 +683,8 @@ export default function App() {
                   user={user}
                   onCellClick={handleCellClick}
                   onShiftSwapRequest={() => {}}
-                  selectedShiftForMove={selectedShift ? { staffId: selectedShift.staffId, dateStr: selectedShift.date, shiftType: selectedShift.shiftType } : null}
-                  shiftToSwap={null}
-                  targetShiftToSwap={null}
+                  shiftToSwap={shiftToSwap}
+                  targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
                 />

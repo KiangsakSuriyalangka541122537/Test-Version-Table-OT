@@ -142,9 +142,6 @@ export function Grid({
                   const currentShifts = getShiftsForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
-                  const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
-                  const isSelectedRequester = shiftToSwap?.staff_id === staff.id && shiftToSwap?.date === dateStr;
-                  const isSelectedTarget = targetShiftToSwap?.staff_id === staff.id && targetShiftToSwap?.date === dateStr;
 
                   // Check for pending swaps
                   const pendingSwap = pendingSwaps.find(s => 
@@ -171,22 +168,14 @@ export function Grid({
                       <td
                         key={dateStr}
                         onClick={() => {
-                          const staffObj = staffList.find(s => s.id === staff.id);
-                          const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
-                          
-                          if (isAdmin && !isPublished) {
-                            onCellClick(staff.id, dateStr, currentShifts);
-                          } else if (user && staffObj) {
-                            onShiftSwapRequest(staffObj, dateStr, shiftObj);
-                          }
+                          onCellClick(staff.id, dateStr, currentShifts);
                         }}
                         className={clsx(
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
-                          isSelectedForMove && "bg-indigo-100",
-                          isSelectedRequester && "bg-emerald-100",
-                          isSelectedTarget && "bg-amber-100",
+                          shiftToSwap?.staff_id === staff.id && shiftToSwap?.date === dateStr && "bg-emerald-200",
+                          targetShiftToSwap?.staff_id === staff.id && targetShiftToSwap?.date === dateStr && "bg-amber-200",
                         )}
                       >
                         <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
