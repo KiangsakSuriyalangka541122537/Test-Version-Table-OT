@@ -36,15 +36,24 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     setLoading(true);
 
     try {
+      // ตัดช่องว่างหน้าหลังเพื่อป้องกันความผิดพลาด
+      const cleanUsername = username.trim();
+      const cleanPassword = password.trim();
+
       // In a real app, use Supabase Auth. For this demo, we check the users table directly.
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
-        .eq('password', password)
-        .single();
+        .eq('username', cleanUsername)
+        .eq('password', cleanPassword)
+        .maybeSingle();
 
-      if (error || !data) {
+      if (supabaseError) {
+        console.error('Supabase Login Error:', supabaseError);
+        throw new Error(`เกิดข้อผิดพลาดจากระบบ: ${supabaseError.message}`);
+      }
+
+      if (!data) {
         throw new Error('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
       }
 
