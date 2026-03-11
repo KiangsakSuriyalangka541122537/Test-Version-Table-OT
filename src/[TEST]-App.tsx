@@ -218,6 +218,13 @@ export default function App() {
           date: dateStr,
           shift_type: 'O'
         };
+
+        // Check if target shift already has multiple shifts (contains ',')
+        if (targetShift.shift_type.includes(',')) {
+          alert('ไม่สามารถย้ายเวรไปยังช่องที่มีเวรซ้อนกันอยู่ได้');
+          return;
+        }
+
         setTargetShiftToSwap(targetShift);
         setRequesterStaff(currentUserStaff);
       }
