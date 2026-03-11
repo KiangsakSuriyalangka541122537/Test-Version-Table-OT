@@ -69,11 +69,12 @@ export function ShiftSwapRequestModal({
 
     // Handle virtual shift (empty)
     if (!targetShift && targetShiftId.startsWith('empty-')) {
-      const parts = targetShiftId.split('-');
+      const dateStr = targetShiftId.slice(-10);
+      const staffId = targetShiftId.slice(6, -11);
       targetShift = {
         id: targetShiftId,
-        staff_id: parts[1],
-        date: parts.slice(2).join('-'),
+        staff_id: staffId,
+        date: dateStr,
         shift_type: '' // Empty string for empty slot
       };
     }
@@ -160,11 +161,12 @@ export function ShiftSwapRequestModal({
   
   // Handle virtual shift for display
   if (!selectedTargetShift && targetShiftId.startsWith('empty-')) {
-    const parts = targetShiftId.split('-');
+    const dateStr = targetShiftId.slice(-10);
+    const staffId = targetShiftId.slice(6, -11);
     selectedTargetShift = {
       id: targetShiftId,
-      staff_id: parts[1],
-      date: parts.slice(2).join('-'),
+      staff_id: staffId,
+      date: dateStr,
       shift_type: 'O'
     };
   }
