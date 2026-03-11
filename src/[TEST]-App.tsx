@@ -340,6 +340,10 @@ export default function App() {
         if (newTypes.includes(newShiftType)) {
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
+          if (newTypes.length >= 2) {
+            alert('ไม่สามารถมีมากกว่า 2 เวรในช่องเดียวกันได้');
+            return;
+          }
           newTypes.push(newShiftType);
         }
 
