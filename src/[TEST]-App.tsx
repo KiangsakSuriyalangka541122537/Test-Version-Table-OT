@@ -442,6 +442,11 @@ export default function App() {
       setPendingSwaps([]);
       setApprovedSwaps([]);
       setLastActionTimestamp(Date.now());
+      setRosterStatus({
+        month_key: monthKey,
+        is_published: false,
+        original_assignments: null
+      });
 
       // 2. Set roster status to Draft (is_published: false)
       const { error: statusError } = await supabase.from('test_roster_status').upsert({
@@ -451,12 +456,6 @@ export default function App() {
       });
 
       if (statusError) throw statusError;
-      
-      setRosterStatus({
-        month_key: monthKey,
-        is_published: false,
-        original_assignments: null
-      });
 
       // 3. Log action
       await supabase.from('test_logs').insert({
