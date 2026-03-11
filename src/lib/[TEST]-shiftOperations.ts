@@ -36,7 +36,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
 
     // 1. Fetch ALL existing shifts for this staff and date to handle potential duplicates
     const { data: existingShifts, error: fetchError } = await supabase
-      .from('shifts')
+      .from('test_shifts')
       .select('*')
       .eq('staff_id', staffId)
       .eq('date', date);
@@ -85,7 +85,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     // 5. Clean up: Delete all existing rows for this staff/date
     if (existingShifts && existingShifts.length > 0) {
       const ids = existingShifts.map(s => s.id);
-      const { error: deleteError } = await supabase.from('shifts').delete().in('id', ids);
+      const { error: deleteError } = await supabase.from('test_shifts').delete().in('id', ids);
       if (deleteError) {
         console.error('Error deleting shifts:', deleteError);
       }
@@ -93,7 +93,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
 
     // 6. Insert the single merged row (if not empty)
     if (newTypes.length > 0) {
-      const { error: insertError } = await supabase.from('shifts').insert({
+      const { error: insertError } = await supabase.from('test_shifts').insert({
         staff_id: staffId,
         date: date,
         shift_type: newShiftTypeStr

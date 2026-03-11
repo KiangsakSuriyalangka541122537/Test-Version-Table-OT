@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 async function updateStaff() {
   console.log('Deleting existing staff...');
-  const { error: deleteError } = await supabase.from('staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { error: deleteError } = await supabase.from('test_staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   
   if (deleteError) {
     console.error('Error deleting staff:', deleteError);
@@ -26,7 +26,7 @@ async function updateStaff() {
     { name: 'นายวิทวัส หมายมั่น' }
   ];
   
-  const { error: insertError } = await supabase.from('staff').insert(newStaff);
+  const { error: insertError } = await supabase.from('test_staff').insert(newStaff);
   
   if (insertError) {
     console.error('Error inserting staff:', insertError);
