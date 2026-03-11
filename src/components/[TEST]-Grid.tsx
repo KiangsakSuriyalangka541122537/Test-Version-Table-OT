@@ -143,8 +143,8 @@ export function Grid({
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
                   const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
-                  const isSelectedRequester = shiftToSwap?.staff_id === staff.id && shiftToSwap?.date === dateStr;
-                  const isSelectedTarget = targetShiftToSwap?.staff_id === staff.id && targetShiftToSwap?.date === dateStr;
+                  const isSelectedRequester = shiftToSwap?.id === (shifts.find(s => s.staff_id === staff.id && s.date === dateStr)?.id || '');
+                  const isSelectedTarget = targetShiftToSwap?.id === (shifts.find(s => s.staff_id === staff.id && s.date === dateStr)?.id || `empty-${staff.id}-${dateStr}`);
 
                   // Check for pending swaps
                   const pendingSwap = pendingSwaps.find(s => 
