@@ -40,7 +40,7 @@ export function Header({
   allShifts,
   onUpdate
 }: HeaderProps) {
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' && user?.username === 'kik';
 
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 sticky top-0 z-40">

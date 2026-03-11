@@ -47,7 +47,7 @@ export default function App() {
   const [selectedShiftForMove, setSelectedShiftForMove] = useState<{ staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null>(null);
 
   const monthKey = format(currentMonth, 'yyyy-MM');
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' && user?.username === 'kik';
   const pdfRef = React.useRef<HTMLDivElement>(null);
   const [lastActionTimestamp, setLastActionTimestamp] = useState<number>(Date.now());
 

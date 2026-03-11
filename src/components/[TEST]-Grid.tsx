@@ -174,10 +174,10 @@ export function Grid({
                           const staffObj = staffList.find(s => s.id === staff.id);
                           const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
                           
-                          if (user && staffObj) {
-                            onShiftSwapRequest(staffObj, dateStr, shiftObj);
-                          } else if (isAdmin && !isPublished) {
+                          if (isAdmin && !isPublished) {
                             onCellClick(staff.id, dateStr, currentShifts);
+                          } else if (user && staffObj) {
+                            onShiftSwapRequest(staffObj, dateStr, shiftObj);
                           }
                         }}
                         className={clsx(
