@@ -110,13 +110,24 @@ export function ShiftSwapRequestModal({
       return;
     }
 
+    // Determine which shift type to move
+    // If moving to an empty slot and the source is a double shift (e.g., M|A or M|N), 
+    // only move the first part (usually 'M') as requested.
+    let shiftTypeToMove = requesterShift.shift_type;
+    if (targetShiftId.startsWith('empty-') && requesterShift.shift_type.includes(',')) {
+      const types = requesterShift.shift_type.split(',');
+      if (types.length > 1) {
+        shiftTypeToMove = types[0]; // Take only the first one (e.g., 'M')
+      }
+    }
+
     setLoading(true);
     try {
       await onSendRequest({
         requester_staff_id: currentStaff.id,
         requester_shift_id: requesterShift.id,
         requester_date: requesterShift.date,
-        requester_shift_type: requesterShift.shift_type,
+        requester_shift_type: shiftTypeToMove,
         target_staff_id: targetStaffId,
         target_shift_id: targetShiftId.startsWith('empty-') ? null : targetShiftId,
         target_date: targetDate,
@@ -205,11 +216,19 @@ export function ShiftSwapRequestModal({
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-1 text-center">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">{selectedRequesterShift.shift_type}</span>
+                    <span className="text-emerald-600 font-bold text-xs">
+                      {(selectedTargetShift.id.startsWith('empty-') && selectedRequesterShift.shift_type.includes(',')) 
+                        ? selectedRequesterShift.shift_type.split(',')[0] 
+                        : selectedRequesterShift.shift_type}
+                    </span>
                   </div>
                   <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">เวรของคุณ</p>
                   <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
-                  {requesterPairedShift && (
+                  {(selectedTargetShift.id.startsWith('empty-') && selectedRequesterShift.shift_type.includes(',')) ? (
+                    <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                      (ย้ายเฉพาะ {selectedRequesterShift.shift_type.split(',')[0]})
+                    </p>
+                  ) : requesterPairedShift && (
                     <p className="text-[10px] text-emerald-600 mt-1">
                       + {requesterPairedShift.shift_type} ({format(new Date(requesterPairedShift.date), 'dd/MM')})
                     </p>
