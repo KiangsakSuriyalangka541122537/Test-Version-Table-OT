@@ -181,6 +181,27 @@ export function ShiftSwapRequestModal({
     }
   };
 
+  const getShiftLabel = (type: string) => {
+    if (!type) return shiftLabels['O'];
+    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+  };
+
+  const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
+
+  let selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
+  
+  // Handle virtual shift for display
+  if (!selectedTargetShift && targetShiftId.startsWith('empty-')) {
+    const dateStr = targetShiftId.slice(-10);
+    const staffId = targetShiftId.slice(6, -11);
+    selectedTargetShift = {
+      id: targetShiftId,
+      staff_id: staffId,
+      date: dateStr,
+      shift_type: 'O'
+    };
+  }
+
   // Helper for UI display
   const getShiftTypeToDisplay = () => {
     if (!selectedRequesterShift || !selectedTargetShift) return '';
@@ -213,27 +234,7 @@ export function ShiftSwapRequestModal({
     return null;
   };
 
-  const getShiftLabel = (type: string) => {
-    if (!type) return shiftLabels['O'];
-    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
-  };
-
-  const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
   const requesterPairedShift = getPairedShift(selectedRequesterShift, allShifts);
-
-  let selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
-  
-  // Handle virtual shift for display
-  if (!selectedTargetShift && targetShiftId.startsWith('empty-')) {
-    const dateStr = targetShiftId.slice(-10);
-    const staffId = targetShiftId.slice(6, -11);
-    selectedTargetShift = {
-      id: targetShiftId,
-      staff_id: staffId,
-      date: dateStr,
-      shift_type: 'O'
-    };
-  }
   const targetPairedShift = getPairedShift(selectedTargetShift, allShifts);
 
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
