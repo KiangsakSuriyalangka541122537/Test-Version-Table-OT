@@ -249,8 +249,8 @@ export default function App() {
     
     if (targetShift) {
       // Merge
-      const targetTypes = targetShift.shift_type.split(',');
-      const sourceTypes = request.requester_shift_type.split(',');
+      const targetTypes = targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+      const sourceTypes = request.requester_shift_type.split(',').map(t => t.trim()).filter(Boolean);
       const mergedTypes = Array.from(new Set([...targetTypes, ...sourceTypes]));
       const newShiftTypeStr = mergedTypes.join(',');
 
@@ -317,7 +317,7 @@ export default function App() {
 
     try {
       const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',').map(t => t.trim()) : [];
+      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
 
       const operations: ShiftOperation[] = [];
 
@@ -358,14 +358,32 @@ export default function App() {
             return;
           }
           
+          // Rule: Max 2 shifts per day
+          if (currentTypes.length >= 2) {
+            alert('ไม่สามารถมีมากกว่า 2 เวรใน 1 วันได้');
+            return;
+          }
+          
           operations.push({ staffId, date: dateStr, type: newShiftType, action: 'add' });
           
           if (newShiftType === 'A') {
             const nextDay = format(addDays(parseDateSafe(dateStr), 1), 'yyyy-MM-dd');
+            const nextDayShift = shifts.find(s => s.staff_id === staffId && s.date === nextDay);
+            const nextDayTypes = nextDayShift && nextDayShift.shift_type ? nextDayShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (nextDayTypes.length >= 2 && !nextDayTypes.includes('N')) {
+              alert('ไม่สามารถเพิ่มเวรบ่ายได้ เนื่องจากจะทำให้วันถัดไปมีเวรดึกเกิน 2 เวร');
+              return;
+            }
             operations.push({ staffId, date: nextDay, type: 'N', action: 'add' });
           }
           if (newShiftType === 'N') {
             const prevDay = format(addDays(parseDateSafe(dateStr), -1), 'yyyy-MM-dd');
+            const prevDayShift = shifts.find(s => s.staff_id === staffId && s.date === prevDay);
+            const prevDayTypes = prevDayShift && prevDayShift.shift_type ? prevDayShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (prevDayTypes.length >= 2 && !prevDayTypes.includes('A')) {
+              alert('ไม่สามารถเพิ่มเวรดึกได้ เนื่องจากจะทำให้วันก่อนหน้ามีเวรบ่ายเกิน 2 เวร');
+              return;
+            }
             operations.push({ staffId, date: prevDay, type: 'A', action: 'add' });
           }
         }

@@ -86,8 +86,8 @@ export function ShiftSwapRequestModal({
 
     // Validation logic
     if (targetShift) {
-      const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
-      const sourceTypes = requesterShift.shift_type ? requesterShift.shift_type.split(',') : [];
+      const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const sourceTypes = requesterShift.shift_type ? requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
 
       // Rule: No more than 2 shifts
       if (targetTypes.length + sourceTypes.length > 2) {
@@ -123,9 +123,13 @@ export function ShiftSwapRequestModal({
     if (requesterShift.shift_type.includes('A')) {
       const nextDay = format(addDays(new Date(targetDate), 1), 'yyyy-MM-dd');
       const targetNextShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === nextDay);
-      const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()) : [];
+      const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
       if (targetNextTypes.includes('A')) {
         setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไปของพนักงานปลายทาง');
+        return;
+      }
+      if (targetNextTypes.length >= 2 && !targetNextTypes.includes('N')) {
+        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้วันถัดไปของพนักงานปลายทางมีเวรเกิน 2 เวร');
         return;
       }
     }
@@ -134,9 +138,13 @@ export function ShiftSwapRequestModal({
     if (requesterShift.shift_type.includes('N')) {
       const prevDay = format(addDays(new Date(targetDate), -1), 'yyyy-MM-dd');
       const targetPrevShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === prevDay);
-      const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()) : [];
+      const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
       if (targetPrevTypes.includes('N')) {
         setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้าของพนักงานปลายทาง');
+        return;
+      }
+      if (targetPrevTypes.length >= 2 && !targetPrevTypes.includes('A')) {
+        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้วันก่อนหน้าของพนักงานปลายทางมีเวรเกิน 2 เวร');
         return;
       }
     }
@@ -145,7 +153,7 @@ export function ShiftSwapRequestModal({
     // If moving to an empty slot and the source is a double shift (e.g., M|A or M|N), 
     // only move the first part (usually 'M') UNLESS it's an A or N shift which must stay together.
     let shiftTypeToMove = requesterShift.shift_type;
-    const types = requesterShift.shift_type.split(',').map(t => t.trim());
+    const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
     
     if (targetShiftId.startsWith('empty-') && types.length > 1) {
       const hasA = types.includes('A');
@@ -205,7 +213,7 @@ export function ShiftSwapRequestModal({
   // Helper for UI display
   const getShiftTypeToDisplay = () => {
     if (!selectedRequesterShift || !selectedTargetShift) return '';
-    const types = selectedRequesterShift.shift_type.split(',').map(t => t.trim());
+    const types = selectedRequesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
     if (selectedTargetShift.id.startsWith('empty-') && types.length > 1) {
       if (!types.includes('A') && !types.includes('N')) {
         return types[0];

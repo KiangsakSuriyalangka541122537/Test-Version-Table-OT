@@ -51,7 +51,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     if (existingShifts && existingShifts.length > 0) {
       existingShifts.forEach(s => {
         if (s.shift_type) {
-          const types = s.shift_type.split(',');
+          const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
           types.forEach(t => {
             const trimmed = t.trim();
             if (trimmed && !currentTypes.includes(trimmed)) {

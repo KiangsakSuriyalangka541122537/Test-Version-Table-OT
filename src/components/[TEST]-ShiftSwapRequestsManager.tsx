@@ -57,11 +57,11 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setError(null);
     try {
       // 1. Apply shift changes
-      const types = request.requester_shift_type.split(',').map(t => t.trim());
+      const types = request.requester_shift_type.split(',').map(t => t.trim()).filter(Boolean);
       
       // Check for A/N conflict in target cell
       const targetShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
-      const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()) : [];
+      const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
       const combinedTypes = Array.from(new Set([...targetTypes, ...types]));
       
       if (combinedTypes.includes('A') && combinedTypes.includes('N')) {
@@ -70,13 +70,24 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         return;
       }
 
+      if (combinedTypes.length > 2) {
+        setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้มีมากกว่า 2 เวรใน 1 วัน');
+        setLoading(false);
+        return;
+      }
+
       // Check for A/N conflict on next day if moving A
       if (types.includes('A')) {
         const nextDay = format(addDays(new Date(request.target_date), 1), 'yyyy-MM-dd');
         const targetNextShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === nextDay);
-        const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()) : [];
+        const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
         if (targetNextTypes.includes('A')) {
           setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไปของพนักงานปลายทาง');
+          setLoading(false);
+          return;
+        }
+        if (targetNextTypes.length >= 2 && !targetNextTypes.includes('N')) {
+          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้วันถัดไปของพนักงานปลายทางมีเวรเกิน 2 เวร');
           setLoading(false);
           return;
         }
@@ -86,9 +97,14 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       if (types.includes('N')) {
         const prevDay = format(addDays(new Date(request.target_date), -1), 'yyyy-MM-dd');
         const targetPrevShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === prevDay);
-        const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()) : [];
+        const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
         if (targetPrevTypes.includes('N')) {
           setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้าของพนักงานปลายทาง');
+          setLoading(false);
+          return;
+        }
+        if (targetPrevTypes.length >= 2 && !targetPrevTypes.includes('A')) {
+          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้วันก่อนหน้าของพนักงานปลายทางมีเวรเกิน 2 เวร');
           setLoading(false);
           return;
         }
