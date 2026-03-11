@@ -218,13 +218,6 @@ export default function App() {
           date: dateStr,
           shift_type: 'O'
         };
-
-        // Check if target shift already has multiple shifts (contains ',')
-        if (targetShift.shift_type.includes(',')) {
-          alert('ไม่สามารถย้ายเวรไปยังช่องที่มีเวรซ้อนกันอยู่ได้');
-          return;
-        }
-
         setTargetShiftToSwap(targetShift);
         setRequesterStaff(currentUserStaff);
       }
@@ -340,10 +333,6 @@ export default function App() {
         if (newTypes.includes(newShiftType)) {
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
-          if (newTypes.length >= 2) {
-            alert('ไม่สามารถมีมากกว่า 2 เวรในช่องเดียวกันได้');
-            return;
-          }
           newTypes.push(newShiftType);
         }
 
