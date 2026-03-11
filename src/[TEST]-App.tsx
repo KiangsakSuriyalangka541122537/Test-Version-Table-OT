@@ -319,6 +319,11 @@ export default function App() {
         if (newTypes.includes(newShiftType)) {
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
+          // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
+          if ((newShiftType === 'A' && newTypes.includes('N')) || (newShiftType === 'N' && newTypes.includes('A'))) {
+            alert('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
+            return;
+          }
           newTypes.push(newShiftType);
         }
 

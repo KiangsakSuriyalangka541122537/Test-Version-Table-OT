@@ -57,7 +57,19 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setError(null);
     try {
       // 1. Apply shift changes
-      const types = request.requester_shift_type.split(',');
+      const types = request.requester_shift_type.split(',').map(t => t.trim());
+      
+      // Check for A/N conflict in target cell
+      const targetShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
+      const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()) : [];
+      const combinedTypes = Array.from(new Set([...targetTypes, ...types]));
+      
+      if (combinedTypes.includes('A') && combinedTypes.includes('N')) {
+        setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกัน');
+        setLoading(false);
+        return;
+      }
+
       const allOperations: ShiftOperation[] = [];
       for (const type of types) {
         const operations = generateMoveOperations(

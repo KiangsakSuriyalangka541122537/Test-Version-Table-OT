@@ -101,6 +101,15 @@ export function ShiftSwapRequestModal({
         setError('ไม่สามารถย้ายเวรประเภทเดียวกันไปรวมกันได้');
         return;
       }
+
+      // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
+      const combinedTypes = [...targetTypes, ...sourceTypes];
+      const hasA = combinedTypes.includes('A');
+      const hasN = combinedTypes.includes('N');
+      if (hasA && hasN) {
+        setError('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
+        return;
+      }
     }
 
     const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
