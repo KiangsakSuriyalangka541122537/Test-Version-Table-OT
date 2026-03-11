@@ -67,9 +67,39 @@ export function ShiftSwapRequestModal({
     const requesterShift = allShifts.find(s => s.id === requesterShiftId);
     let targetShift = allShifts.find(s => s.id === targetShiftId);
 
+    // Handle virtual shift (empty)
+    if (!targetShift && targetShiftId.startsWith('empty-')) {
+      const parts = targetShiftId.split('-');
+      targetShift = {
+        id: targetShiftId,
+        staff_id: parts[1],
+        date: parts.slice(2).join('-'),
+        shift_type: '' // Empty string for empty slot
+      };
+    }
+
     if (!requesterShift) {
       setError('ไม่พบข้อมูลกะของคุณ');
       return;
+    }
+
+    // Validation logic
+    if (targetShift) {
+      const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
+      const sourceTypes = requesterShift.shift_type ? requesterShift.shift_type.split(',') : [];
+
+      // Rule: No more than 2 shifts
+      if (targetTypes.length + sourceTypes.length > 2) {
+        setError('ไม่สามารถมีมากกว่า 2 เวรในช่องเดียวกันได้');
+        return;
+      }
+
+      // Rule: Cannot move same type (e.g., M to M, A to A, N to N)
+      const hasOverlap = sourceTypes.some(s => targetTypes.includes(s));
+      if (hasOverlap) {
+        setError('ไม่สามารถย้ายเวรประเภทเดียวกันไปรวมกันได้');
+        return;
+      }
     }
 
     const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
