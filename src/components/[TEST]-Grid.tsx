@@ -182,10 +182,20 @@ export function Grid({
                     )
                   );
 
-                    return (
-                      <td
-                        key={dateStr}
-                        onClick={() => {
+                  return (
+                    <td
+                      key={dateStr}
+                      onMouseEnter={() => {
+                        const relatedSwaps = approvedSwaps.filter(s => 
+                          (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                          (s.target_staff_id === staff.id && s.target_date === dateStr)
+                        );
+                        if (relatedSwaps.length > 0) {
+                          setHoveredSwapIds(relatedSwaps.map(s => s.id));
+                        }
+                      }}
+                      onMouseLeave={() => setHoveredSwapIds([])}
+                      onClick={() => {
                           const staffObj = staffList.find(s => s.id === staff.id);
                           const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
                           
@@ -200,6 +210,7 @@ export function Grid({
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
                           isCrosshair && "bg-yellow-50/40",
+                          isHoveredSwap && "bg-yellow-300/50! z-20 shadow-inner",
                           isPendingSwap && "bg-amber-50/60 border-l-2 border-l-amber-400!",
                           (isSelectedForMove || isSelectedRequester) && "bg-yellow-400! z-10",
                           isSelectedTarget && "bg-yellow-200! z-10",
