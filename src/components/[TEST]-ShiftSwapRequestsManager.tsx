@@ -76,6 +76,25 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         return;
       }
 
+      // Check for daily uniqueness (M, A, N cannot duplicate across staff)
+      for (const type of types) {
+        if (['M', 'A', 'N'].includes(type)) {
+          const isAssignedToOther = allShifts.some(s => 
+            s.date === request.target_date && 
+            s.staff_id !== request.target_staff_id && 
+            s.staff_id !== request.requester_staff_id && // Ignore the requester who is giving up this shift
+            s.shift_type && 
+            s.shift_type.split(',').map(t => t.trim()).includes(type)
+          );
+          if (isAssignedToOther) {
+            const typeLabel = type === 'M' ? 'เช้า (ช)' : type === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)';
+            setError(`ไม่สามารถอนุมัติได้เนื่องจากเวร${typeLabel} มีผู้รับผิดชอบแล้ว ห้ามจัดซ้ำในวันเดียวกัน`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       // Check for A/N conflict on next day if moving A
       if (types.includes('A')) {
         const nextDay = format(addDays(new Date(request.target_date), 1), 'yyyy-MM-dd');

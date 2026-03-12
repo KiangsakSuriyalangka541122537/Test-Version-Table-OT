@@ -110,6 +110,27 @@ export function ShiftSwapRequestModal({
         setError('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
         return;
       }
+
+      // Rule: Daily uniqueness (M, A, N cannot duplicate across staff)
+      const targetDateStr = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
+      if (targetDateStr) {
+        for (const type of sourceTypes) {
+          if (['M', 'A', 'N'].includes(type)) {
+            const isAssignedToOther = allShifts.some(s => 
+              s.date === targetDateStr && 
+              s.staff_id !== targetStaffId && 
+              s.staff_id !== requesterShift.staff_id && // Ignore the requester
+              s.shift_type && 
+              s.shift_type.split(',').map(t => t.trim()).includes(type)
+            );
+            if (isAssignedToOther) {
+              const typeLabel = type === 'M' ? 'เช้า (ช)' : type === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)';
+              setError(`ไม่สามารถย้ายได้เนื่องจากเวร${typeLabel} มีผู้รับผิดชอบแล้ว ห้ามจัดซ้ำในวันเดียวกัน`);
+              return;
+            }
+          }
+        }
+      }
     }
 
     const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');

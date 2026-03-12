@@ -405,8 +405,9 @@ export default function App() {
       });
 
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving shift:', error);
+      alert(error.message || 'เกิดข้อผิดพลาดในการบันทึกเวร');
     }
   };
 
