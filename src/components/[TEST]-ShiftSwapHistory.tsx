@@ -29,13 +29,13 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
-        .eq('status', ShiftSwapStatus.APPROVED)
+        .in('status', [ShiftSwapStatus.APPROVED, ShiftSwapStatus.PENDING])
         .order('updated_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
       
-      console.log('Total approved swaps fetched:', data?.length);
+      console.log('Raw swaps fetched:', data);
 
       const filtered = (data || []).filter(item => {
         const reqMonth = item.requester_date ? item.requester_date.substring(0, 7) : '';
