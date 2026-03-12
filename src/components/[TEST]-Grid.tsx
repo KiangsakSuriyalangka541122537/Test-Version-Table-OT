@@ -237,13 +237,16 @@ export function Grid({
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
                           isCrosshair && "bg-yellow-50/40",
-                          isHoveredSwap && "!bg-yellow-300/60 z-20 shadow-inner",
+                          isHoveredSwap && "!bg-yellow-400/80 z-20 ring-2 ring-yellow-600 ring-inset shadow-lg",
                           isPendingSwap && "bg-amber-50/60 !border-l-2 !border-l-amber-400",
-                          (isSelectedForMove || isSelectedRequester) && "!bg-yellow-400 z-10",
-                          isSelectedTarget && "!bg-yellow-200 z-10",
+                          (isSelectedForMove || isSelectedRequester) && "!bg-yellow-500 z-10",
+                          isSelectedTarget && "!bg-yellow-300 z-10",
                         )}
                       >
                         <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
+                          {approvedSwap && !isHoveredSwap && (
+                            <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-yellow-400 rounded-bl-sm opacity-60" />
+                          )}
                           {currentShifts.length > 0 ? (
                             currentShifts.map((shiftType, idx) => {
                               const isThisTypeSelected = isSelectedRequester && selectedShiftType === shiftType;
