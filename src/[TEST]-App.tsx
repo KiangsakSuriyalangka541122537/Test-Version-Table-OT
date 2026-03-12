@@ -112,6 +112,21 @@ export default function App() {
     fetchData();
   }, [currentMonth]);
 
+  useEffect(() => {
+    const handleTriggerSwap = (e: any) => {
+      const { staffName, dateStr, currentShifts } = e.detail;
+      const staff = staffList.find(s => s.name === staffName);
+      const shift = shifts.find(s => s.staff_id === staff?.id && s.date === dateStr);
+      
+      if (staff && shift) {
+        handleShiftSwapRequest(staff, dateStr, shift);
+      }
+    };
+
+    window.addEventListener('trigger-swap', handleTriggerSwap);
+    return () => window.removeEventListener('trigger-swap', handleTriggerSwap);
+  }, [staffList, shifts]);
+
   const fetchData = async () => {
     setLoading(true);
     try {

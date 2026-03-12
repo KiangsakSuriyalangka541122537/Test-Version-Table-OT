@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { ShiftSwapRequest, ShiftSwapStatus, Staff } from '../types';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { ArrowRightLeft, Calendar, User, Clock } from 'lucide-react';
+import { ArrowRightLeft, Calendar, User, Clock, History } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ShiftSwapHistoryProps {
@@ -23,43 +23,27 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      // Get start and end of the current month to filter history?
-      // Or just show latest 10-20 swaps regardless of month?
-      // User said "below the roster calendar", implying it might be relevant to the displayed month.
-      // However, swaps are actions. Usually we want to see recent actions.
-      // Let's filter by the month of the *requester_date* or *target_date* matching the current month.
-      
-      const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
-      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString();
-
-      // Supabase doesn't support complex OR filtering easily across different columns with dates in one go without raw SQL or multiple queries.
-      // Let's just fetch recent approved swaps and filter client side or just fetch last 50.
-      // "History of shift swaps" usually implies recent activity.
+      const monthStr = format(currentMonth, 'yyyy-MM');
+      console.log('Fetching history for month:', monthStr);
       
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
         .eq('status', ShiftSwapStatus.APPROVED)
         .order('updated_at', { ascending: false })
-        .limit(20);
+        .limit(100);
 
       if (error) throw error;
       
-      // Filter to show only swaps relevant to the current month view?
-      // Or just show all recent history?
-      // "History of shift swaps" usually means "What happened recently".
-      // But if it's "below the roster", maybe it should show swaps *for this month*.
-      // Let's filter client side for relevance to current month if possible, or just show all recent.
-      // Showing all recent is safer to ensure visibility of actions.
-      // But user said "flexible according to screen like the roster".
-      
-      // Let's try to show swaps that involve dates in the current month.
-      const currentMonthStr = format(currentMonth, 'yyyy-MM');
-      const filtered = (data || []).filter(item => 
-        item.requester_date.startsWith(currentMonthStr) || 
-        item.target_date.startsWith(currentMonthStr)
-      );
+      console.log('Total approved swaps fetched:', data?.length);
 
+      const filtered = (data || []).filter(item => {
+        const reqMonth = item.requester_date ? item.requester_date.substring(0, 7) : '';
+        const tarMonth = item.target_date ? item.target_date.substring(0, 7) : '';
+        return reqMonth === monthStr || tarMonth === monthStr;
+      });
+
+      console.log('Filtered swaps for current month:', filtered.length);
       setHistory(filtered);
     } catch (err) {
       console.error('Error fetching history:', err);
@@ -110,8 +94,17 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       
       <div className="p-4">
         {history.length === 0 ? (
-           <div className="text-center text-slate-400 text-xs py-4">
-             ยังไม่มีประวัติการย้ายเวรในเดือนนี้
+           <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center shadow-sm">
+             <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+               <History className="w-6 h-6 text-slate-300" />
+             </div>
+             <p className="text-slate-400 text-sm">ยังไม่มีประวัติการย้ายเวรในเดือน {format(currentMonth, 'MMMM yyyy', { locale: th })}</p>
+             <button 
+               onClick={fetchHistory}
+               className="mt-4 text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+             >
+               ลองโหลดข้อมูลอีกครั้ง
+             </button>
            </div>
         ) : (
           <div className="flex flex-col gap-2">
