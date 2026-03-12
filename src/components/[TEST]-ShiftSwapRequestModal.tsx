@@ -10,6 +10,7 @@ interface ShiftSwapRequestModalProps {
   onSendRequest: (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => void;
   currentStaff: Staff | null; // The logged-in staff
   initialRequesterShift: Shift | null; // Optional: The shift the user clicked (if it's theirs)
+  initialShiftType: ShiftType | null; // Optional: The specific shift type clicked (e.g. 'M' from 'M|N')
   initialTargetShift: Shift | null; // Optional: The shift the user clicked (if it's someone else's)
   allStaff: Staff[];
   allShifts: Shift[];
@@ -32,11 +33,13 @@ export function ShiftSwapRequestModal({
   onSendRequest,
   currentStaff,
   initialRequesterShift,
+  initialShiftType,
   initialTargetShift,
   allStaff,
   allShifts,
 }: ShiftSwapRequestModalProps) {
   const [requesterShiftId, setRequesterShiftId] = useState<string>('');
+  const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetStaffId, setTargetStaffId] = useState<string>('');
   const [targetShiftId, setTargetShiftId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -45,12 +48,13 @@ export function ShiftSwapRequestModal({
   useEffect(() => {
     if (isOpen) {
       setRequesterShiftId(initialRequesterShift?.id || '');
+      setSelectedShiftType(initialShiftType || null);
       setTargetStaffId(initialTargetShift?.staff_id || '');
       setTargetShiftId(initialTargetShift?.id || '');
       setError(null);
       setLoading(false);
     }
-  }, [isOpen, initialRequesterShift, initialTargetShift]);
+  }, [isOpen, initialRequesterShift, initialShiftType, initialTargetShift]);
 
   if (!isOpen || !currentStaff) return null;
 
@@ -171,21 +175,25 @@ export function ShiftSwapRequestModal({
     }
 
     // Determine which shift type to move
-    // If moving to an empty slot and the source is a double shift (e.g., M|A or M|N), 
-    // only move the first part (usually 'M') UNLESS it's an A or N shift which must stay together.
-    let shiftTypeToMove = requesterShift.shift_type;
+    let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
     const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
     
-    if (targetShiftId.startsWith('empty-') && types.length > 1) {
+    if (!selectedShiftType && types.length > 1) {
+      const hasM = types.includes('M');
       const hasA = types.includes('A');
       const hasN = types.includes('N');
       
-      if (hasA || hasN) {
-        // Move the whole thing to keep A/N pairing intact
-        shiftTypeToMove = requesterShift.shift_type;
-      } else {
-        // Otherwise, move only the first part as requested previously
-        shiftTypeToMove = types[0];
+      if (hasM && (hasA || hasN)) {
+        // User specifically requested: if M is paired with A or N, ONLY move M
+        shiftTypeToMove = 'M';
+      } else if (targetShiftId.startsWith('empty-')) {
+        // If moving to an empty slot and it's a double shift (e.g., A|N - though A|N is forbidden on same day)
+        // we keep them together if they are A or N to maintain pairing logic
+        if (hasA || hasN) {
+          shiftTypeToMove = requesterShift.shift_type;
+        } else {
+          shiftTypeToMove = types[0];
+        }
       }
     }
 
@@ -234,10 +242,23 @@ export function ShiftSwapRequestModal({
   // Helper for UI display
   const getShiftTypeToDisplay = () => {
     if (!selectedRequesterShift || !selectedTargetShift) return '';
+    if (selectedShiftType) return selectedShiftType;
+    
     const types = selectedRequesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
-    if (selectedTargetShift.id.startsWith('empty-') && types.length > 1) {
-      if (!types.includes('A') && !types.includes('N')) {
-        return types[0];
+    
+    if (types.length > 1) {
+      const hasM = types.includes('M');
+      const hasA = types.includes('A');
+      const hasN = types.includes('N');
+      
+      if (hasM && (hasA || hasN)) {
+        return 'M';
+      }
+      
+      if (selectedTargetShift.id.startsWith('empty-')) {
+        if (!hasA && !hasN) {
+          return types[0];
+        }
       }
     }
     return selectedRequesterShift.shift_type;

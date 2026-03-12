@@ -13,9 +13,10 @@ interface GridProps {
   isPublished: boolean;
   user: User | null;
   onCellClick: (staffId: string, date: string, currentShifts: ShiftType[]) => void;
-  onShiftSwapRequest: (staff: Staff, dateStr: string, shift: Shift | null) => void;
+  onShiftSwapRequest: (staff: Staff, dateStr: string, shift: Shift | null, specificType?: ShiftType) => void;
   selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
   shiftToSwap?: Shift | null;
+  selectedShiftType?: ShiftType | null;
   targetShiftToSwap?: Shift | null;
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
@@ -46,6 +47,7 @@ export function Grid({
   onShiftSwapRequest, 
   selectedShiftForMove,
   shiftToSwap,
+  selectedShiftType,
   targetShiftToSwap,
   pendingSwaps = [],
   approvedSwaps = []
@@ -191,15 +193,33 @@ export function Grid({
                       >
                         <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
                           {currentShifts.length > 0 ? (
-                            currentShifts.map((shiftType, idx) => (
-                              <span 
-                                key={`${dateStr}-${idx}`} 
-                                className={clsx("font-bold text-sm", shiftColors[shiftType])}
-                              >
-                                {shiftLabels[shiftType]}
-                                {idx < currentShifts.length - 1 && <span className="text-slate-300 mx-0.5">|</span>}
-                              </span>
-                            ))
+                            currentShifts.map((shiftType, idx) => {
+                              const isThisTypeSelected = isSelectedRequester && selectedShiftType === shiftType;
+                              return (
+                                <React.Fragment key={`${dateStr}-${idx}`}>
+                                  <span 
+                                    onClick={(e) => {
+                                      if (user && !isAdmin) {
+                                        e.stopPropagation();
+                                        const staffObj = staffList.find(s => s.id === staff.id);
+                                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
+                                        if (staffObj) {
+                                          onShiftSwapRequest(staffObj, dateStr, shiftObj, shiftType);
+                                        }
+                                      }
+                                    }}
+                                    className={clsx(
+                                      "font-bold text-sm px-0.5 rounded transition-all", 
+                                      shiftColors[shiftType],
+                                      isThisTypeSelected ? "bg-yellow-400 text-yellow-900 shadow-sm scale-110" : "hover:bg-slate-100"
+                                    )}
+                                  >
+                                    {shiftLabels[shiftType]}
+                                  </span>
+                                  {idx < currentShifts.length - 1 && <span className="text-slate-300 mx-0.5">|</span>}
+                                </React.Fragment>
+                              );
+                            })
                           ) : (
                             <span className="text-slate-200 text-[10px]">•</span>
                           )}

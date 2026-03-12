@@ -45,6 +45,7 @@ export default function App() {
   // Shift Swap Request Modal state
   const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
   const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
+  const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
   const [requesterStaff, setRequesterStaff] = useState<Staff | null>(null);
   
@@ -190,7 +191,7 @@ export default function App() {
     }
   };
 
-  const handleShiftSwapRequest = (staff: Staff, dateStr: string, shift: Shift | null) => {
+  const handleShiftSwapRequest = (staff: Staff, dateStr: string, shift: Shift | null, specificType?: ShiftType) => {
     if (!shift) {
       // If clicking an empty cell, treat as target
       if (shiftToSwap) {
@@ -207,11 +208,13 @@ export default function App() {
     if (!shiftToSwap) {
       // Select source
       setShiftToSwap(shift);
+      setSelectedShiftType(specificType || null);
       setRequesterStaff(staff);
     } else {
       // Select target
       if (shiftToSwap.id === shift.id) {
         setShiftToSwap(null);
+        setSelectedShiftType(null);
         setRequesterStaff(null);
       } else {
         setTargetShiftToSwap(shift);
@@ -303,6 +306,7 @@ export default function App() {
         : 'ส่งคำขอสลับเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
       
       setShiftToSwap(null);
+      setSelectedShiftType(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
     } catch (error) {
@@ -699,7 +703,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => { setShiftToSwap(null); setTargetShiftToSwap(null); }}
+                    onClick={() => { setShiftToSwap(null); setSelectedShiftType(null); setTargetShiftToSwap(null); }}
                     className="px-3 py-1.5 bg-white text-slate-600 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
                   >
                     ยกเลิก
@@ -731,8 +735,9 @@ export default function App() {
                   user={user}
                   onCellClick={handleCellClick}
                   onShiftSwapRequest={handleShiftSwapRequest}
-                  selectedShiftForMove={null}
+                  selectedShiftForMove={selectedShiftForMove}
                   shiftToSwap={shiftToSwap}
+                  selectedShiftType={selectedShiftType}
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
@@ -787,6 +792,7 @@ export default function App() {
         onSendRequest={handleSendSwapRequest}
         currentStaff={requesterStaff}
         initialRequesterShift={shiftToSwap}
+        initialShiftType={selectedShiftType}
         initialTargetShift={targetShiftToSwap}
         allStaff={staffList}
         allShifts={shifts}
