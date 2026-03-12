@@ -186,12 +186,39 @@ export function Grid({
                     <td
                       key={dateStr}
                       onMouseEnter={() => {
-                        const relatedSwaps = approvedSwaps.filter(s => 
-                          (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
-                          (s.target_staff_id === staff.id && s.target_date === dateStr)
-                        );
-                        if (relatedSwaps.length > 0) {
-                          setHoveredSwapIds(relatedSwaps.map(s => s.id));
+                        const findChain = (sId: string, dStr: string) => {
+                          const visitedSwaps = new Set<string>();
+                          const visitedNodes = new Set<string>();
+                          const queue: { sId: string; dStr: string }[] = [{ sId, dStr }];
+                          visitedNodes.add(`${sId}_${dStr}`);
+
+                          while (queue.length > 0) {
+                            const current = queue.shift()!;
+                            approvedSwaps.forEach(s => {
+                              if (visitedSwaps.has(s.id)) return;
+
+                              const isRequester = s.requester_staff_id === current.sId && s.requester_date === current.dStr;
+                              const isTarget = s.target_staff_id === current.sId && s.target_date === current.dStr;
+
+                              if (isRequester || isTarget) {
+                                visitedSwaps.add(s.id);
+                                const otherStaffId = isRequester ? s.target_staff_id : s.requester_staff_id;
+                                const otherDate = isRequester ? s.target_date : s.requester_date;
+                                const otherKey = `${otherStaffId}_${otherDate}`;
+
+                                if (!visitedNodes.has(otherKey)) {
+                                  visitedNodes.add(otherKey);
+                                  queue.push({ sId: otherStaffId, dStr: otherDate });
+                                }
+                              }
+                            });
+                          }
+                          return Array.from(visitedSwaps);
+                        };
+
+                        const chainIds = findChain(staff.id, dateStr);
+                        if (chainIds.length > 0) {
+                          setHoveredSwapIds(chainIds);
                         }
                       }}
                       onMouseLeave={() => setHoveredSwapIds([])}
