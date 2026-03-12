@@ -647,21 +647,21 @@ export default function App() {
             </div>
 
             {selectedShiftForMove && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span className="text-indigo-600 font-bold text-xs">{selectedShiftForMove.shiftType}</span>
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <span className="text-yellow-700 font-bold text-xs">{selectedShiftForMove.shiftType}</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-indigo-900">
+                    <p className="text-sm font-medium text-yellow-900">
                       กำลังเลือกเวรของ <span className="font-bold">{staffList.find(s => s.id === selectedShiftForMove.staffId)?.name}</span> วันที่ {format(new Date(selectedShiftForMove.dateStr), 'dd/MM/yyyy')}
                     </p>
-                    <p className="text-xs text-indigo-700">คลิกช่องอื่นเพื่อย้าย/สลับ หรือคลิกที่เดิมเพื่อแก้ไข</p>
+                    <p className="text-xs text-yellow-700">คลิกช่องอื่นเพื่อย้าย/สลับ หรือคลิกที่เดิมเพื่อแก้ไข</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedShiftForMove(null)}
-                  className="px-3 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg border border-indigo-200 hover:bg-indigo-50 transition-colors"
+                  className="px-3 py-1.5 bg-white text-yellow-700 text-xs font-medium rounded-lg border border-yellow-200 hover:bg-yellow-50 transition-colors"
                 >
                   ยกเลิก
                 </button>
@@ -669,30 +669,30 @@ export default function App() {
             )}
 
             {(shiftToSwap || targetShiftToSwap) && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <RefreshCw className="w-4 h-4 text-emerald-600" />
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-yellow-600" />
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase text-emerald-600">กะของคุณ:</span>
+                      <span className="text-[10px] font-bold uppercase text-yellow-600">กะของคุณ:</span>
                       {shiftToSwap ? (
-                        <span className="text-sm font-bold text-emerald-900">{format(new Date(shiftToSwap.date), 'dd/MM')} ({shiftToSwap.shift_type})</span>
+                        <span className="text-sm font-bold text-yellow-900">{format(new Date(shiftToSwap.date), 'dd/MM')} ({shiftToSwap.shift_type})</span>
                       ) : (
-                        <span className="text-xs italic text-emerald-600/60">ยังไม่ได้เลือก</span>
+                        <span className="text-xs italic text-yellow-600/60">ยังไม่ได้เลือก</span>
                       )}
                     </div>
-                    <div className="hidden sm:block w-px h-3 bg-emerald-200"></div>
+                    <div className="hidden sm:block w-px h-3 bg-yellow-200"></div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase text-emerald-600">กะที่ต้องการ:</span>
+                      <span className="text-[10px] font-bold uppercase text-yellow-600">กะที่ต้องการ:</span>
                       {targetShiftToSwap ? (
-                        <span className="text-sm font-bold text-emerald-900">
+                        <span className="text-sm font-bold text-yellow-900">
                           {staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name?.split(' ')[0] || 'ไม่พบพนักงาน'} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} 
                           {targetShiftToSwap.id.startsWith('empty-') ? ' (ช่องว่าง)' : ` (${targetShiftToSwap.shift_type})`}
                         </span>
                       ) : (
-                        <span className="text-xs italic text-emerald-600/60">ยังไม่ได้เลือก</span>
+                        <span className="text-xs italic text-yellow-600/60">ยังไม่ได้เลือก</span>
                       )}
                     </div>
                   </div>
@@ -707,7 +707,7 @@ export default function App() {
                   <button 
                     onClick={() => setIsShiftSwapRequestModalOpen(true)}
                     disabled={!shiftToSwap || !targetShiftToSwap}
-                    className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="px-4 py-1.5 bg-yellow-600 text-white text-xs font-bold rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     ยืนยันการสลับ
                   </button>

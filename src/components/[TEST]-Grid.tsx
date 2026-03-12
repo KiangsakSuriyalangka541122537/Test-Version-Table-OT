@@ -185,9 +185,8 @@ export function Grid({
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
-                          isSelectedForMove && "bg-indigo-100",
-                          isSelectedRequester && "bg-emerald-100",
-                          isSelectedTarget && "bg-amber-100",
+                          (isSelectedForMove || isSelectedRequester) && "bg-yellow-400! z-10",
+                          isSelectedTarget && "bg-yellow-200! z-10",
                         )}
                       >
                         <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
