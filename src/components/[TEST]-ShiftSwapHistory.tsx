@@ -29,7 +29,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
-        .eq('status', ShiftSwapStatus.APPROVED)
+        .in('status', [ShiftSwapStatus.APPROVED, ShiftSwapStatus.WAITING_TARGET, ShiftSwapStatus.PENDING])
         .order('updated_at', { ascending: false })
         .limit(100);
 
@@ -133,6 +133,8 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                 )}>
                   {getShiftLabel(item.target_shift_type)}
                 </span>
+
+                <span className="ml-1 text-[10px] font-bold text-amber-600">({item.status})</span>
 
                 <span className="ml-auto text-[10px] text-slate-300 italic">
                   ({format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })})
