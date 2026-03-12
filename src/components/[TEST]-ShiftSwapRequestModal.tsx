@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import clsx from 'clsx';
 
 interface ShiftSwapRequestModalProps {
@@ -340,6 +340,7 @@ export function ShiftSwapRequestModal({
               <div className="bg-white/50 rounded-lg p-3 text-[10px] text-emerald-800 border border-emerald-100/50">
                 <p className="font-bold mb-1">💡 ข้อมูลการย้าย:</p>
                 <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type} → {selectedRequesterShift.shift_type}/{selectedTargetShift.shift_type})</p>
+                <p className="mt-1 text-emerald-600 font-medium">✨ สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการและวันหยุดนักขัตฤกษ์</p>
               </div>
             </div>
           )}

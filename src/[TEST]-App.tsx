@@ -777,6 +777,7 @@ export default function App() {
         onClose={() => setIsAdminOpen(false)}
         staffList={staffList}
         onStaffUpdate={fetchData}
+        allShifts={shifts}
       />
 
       {/* Shift Swap Request Modal */}

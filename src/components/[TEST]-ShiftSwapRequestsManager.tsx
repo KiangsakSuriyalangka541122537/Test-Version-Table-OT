@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
-import { format, isValid } from 'date-fns';
+import { format, isValid, addDays } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
 import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
