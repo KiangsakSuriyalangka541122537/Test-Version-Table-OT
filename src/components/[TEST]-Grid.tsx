@@ -77,7 +77,7 @@ export function Grid({
               const dateStr = format(day, 'yyyy-MM-dd');
               const isWknd = isWeekend(day);
               const isTdy = isToday(day);
-              const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+              const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr) || (targetShiftToSwap?.date === dateStr);
               
               return (
                 <th
@@ -131,7 +131,7 @@ export function Grid({
               <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className={clsx(
                   "px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 z-10 border-r border-slate-200 transition-colors overflow-hidden text-ellipsis",
-                  (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id) ? "bg-yellow-100!" : "bg-white group-hover:bg-slate-50"
+                  (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id || targetShiftToSwap?.staff_id === staff.id) ? "bg-yellow-100!" : "bg-white group-hover:bg-slate-50"
                 )}>
                   <div className="flex items-center gap-2">
                     <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center border transition-all ${
@@ -157,8 +157,8 @@ export function Grid({
                   const isSelectedTarget = targetShiftToSwap?.id === (currentShift?.id || `empty-${staff.id}-${dateStr}`);
 
                   // Crosshair highlighting logic
-                  const isRowHighlighted = (selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id);
-                  const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+                  const isRowHighlighted = (selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id) || (targetShiftToSwap?.staff_id === staff.id);
+                  const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr) || (targetShiftToSwap?.date === dateStr);
                   const isCrosshair = isRowHighlighted || isColHighlighted;
 
                   // Check for pending swaps
@@ -200,6 +200,7 @@ export function Grid({
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
                           isCrosshair && "bg-yellow-50/40",
+                          isPendingSwap && "bg-amber-50/60 border-l-2 border-l-amber-400!",
                           (isSelectedForMove || isSelectedRequester) && "bg-yellow-400! z-10",
                           isSelectedTarget && "bg-yellow-200! z-10",
                         )}
