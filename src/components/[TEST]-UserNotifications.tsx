@@ -73,7 +73,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     
     try {
       const { data, error } = await supabase
-        .from('shift_swap_requests')
+        .from('test_shift_swap_requests')
         .select('*')
         .eq('target_staff_id', currentUserStaff.id)
         .eq('status', ShiftSwapStatus.WAITING_TARGET)
@@ -113,7 +113,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
       // 2. Update request status to APPROVED
       const { error } = await supabase
-        .from('shift_swap_requests')
+        .from('test_shift_swap_requests')
         .update({ 
           status: ShiftSwapStatus.APPROVED, 
           updated_at: new Date().toISOString() 
@@ -143,7 +143,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('shift_swap_requests')
+        .from('test_shift_swap_requests')
         .update({ 
           status: ShiftSwapStatus.REJECTED, 
           updated_at: new Date().toISOString() 
