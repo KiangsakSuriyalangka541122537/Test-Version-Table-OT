@@ -62,7 +62,9 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       // Check for A/N conflict in target cell
       const targetShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
       const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      const combinedTypes = Array.from(new Set([...targetTypes, ...types]));
+      
+      // If target_shift_type is 'O', it's a combine. If it's not 'O', it's a swap, so targetTypes will be replaced by types.
+      const combinedTypes = request.target_shift_type === 'O' ? Array.from(new Set([...targetTypes, ...types])) : [...types];
       
       if (combinedTypes.includes('A') && combinedTypes.includes('N')) {
         setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกัน');
@@ -130,9 +132,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       }
 
       const allOperations: ShiftOperation[] = [];
-      const requesterTypes = request.requester_shift_type ? request.requester_shift_type.split(',') : [];
-      for (const type of requesterTypes) {
-        if (!type.trim() || type.trim() === 'O') continue;
+      for (const type of types) {
         const operations = generateMoveOperations(
           request.requester_staff_id,
           request.requester_date,
@@ -142,23 +142,6 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         );
         allOperations.push(...operations);
       }
-
-      // If it's a swap (target has a shift), move target's shift to requester
-      if (request.target_shift_type && request.target_shift_type !== 'O') {
-        const targetTypes = request.target_shift_type.split(',');
-        for (const type of targetTypes) {
-          if (!type.trim() || type.trim() === 'O') continue;
-          const operations = generateMoveOperations(
-            request.target_staff_id,
-            request.target_date,
-            request.requester_staff_id,
-            request.requester_date,
-            type.trim() as ShiftType
-          );
-          allOperations.push(...operations);
-        }
-      }
-
       await applyShiftOperations(allOperations);
 
       // 2. Update request status
