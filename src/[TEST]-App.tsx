@@ -112,21 +112,6 @@ export default function App() {
     fetchData();
   }, [currentMonth]);
 
-  useEffect(() => {
-    const handleTriggerSwap = (e: any) => {
-      const { staffName, dateStr, currentShifts } = e.detail;
-      const staff = staffList.find(s => s.name === staffName);
-      const shift = shifts.find(s => s.staff_id === staff?.id && s.date === dateStr);
-      
-      if (staff && shift) {
-        handleShiftSwapRequest(staff, dateStr, shift);
-      }
-    };
-
-    window.addEventListener('trigger-swap', handleTriggerSwap);
-    return () => window.removeEventListener('trigger-swap', handleTriggerSwap);
-  }, [staffList, shifts]);
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -295,36 +280,21 @@ export default function App() {
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Sending swap request:', request);
-      console.log('Checking requester_staff_id:', request.requester_staff_id);
-      console.log('Checking target_staff_id:', request.target_staff_id);
-      
-      const isDifferentStaff = request.target_staff_id !== request.requester_staff_id;
-      console.log('Is different staff:', isDifferentStaff);
-      
-      const initialStatus = isDifferentStaff 
+      const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
         ? ShiftSwapStatus.WAITING_TARGET 
         : ShiftSwapStatus.PENDING;
       
-      console.log('Initial status:', initialStatus);
-      
-      const payload = {
+      const { error } = await supabase.from('test_shift_swap_requests').insert({
         ...request,
         target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
           ? request.target_shift_id 
           : null,
         status: initialStatus
-      };
-      
-      console.log('Payload to insert:', payload);
-
-      const { data, error } = await supabase.from('test_shift_swap_requests').insert(payload).select();
-      
+      });
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));
         throw error;
       }
-      
-      console.log('Insert successful:', data);
 
       await supabase.from('test_logs').insert({
         message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
@@ -339,9 +309,9 @@ export default function App() {
       setSelectedShiftType(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending swap request:', error);
-      alert(`เกิดข้อผิดพลาดในการส่งคำขอสลับเวร: ${error?.message || 'Unknown error'}`);
+      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
     }
   };
 
