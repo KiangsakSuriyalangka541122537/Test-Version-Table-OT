@@ -198,7 +198,8 @@ export const generateSwapOperations = (
   typeA: string, // Can be comma separated
   staffBId: string,
   dateBStr: string,
-  typeB: string  // Can be comma separated
+  typeB: string, // Can be comma separated
+  isSwap: boolean = false
 ): ShiftOperation[] => {
   const allOperations: ShiftOperation[] = [];
 
@@ -208,10 +209,12 @@ export const generateSwapOperations = (
     allOperations.push(...generateMoveOperations(staffAId, dateAStr, staffBId, dateBStr, t as ShiftType));
   }
 
-  // Move B's shifts to A
-  const typesB = typeB.split(',').map(t => t.trim()).filter(t => t !== 'O' && Boolean(t));
-  for (const t of typesB) {
-    allOperations.push(...generateMoveOperations(staffBId, dateBStr, staffAId, dateAStr, t as ShiftType));
+  if (isSwap) {
+    // Move B's shifts to A
+    const typesB = typeB.split(',').map(t => t.trim()).filter(t => t !== 'O' && Boolean(t));
+    for (const t of typesB) {
+      allOperations.push(...generateMoveOperations(staffBId, dateBStr, staffAId, dateAStr, t as ShiftType));
+    }
   }
 
   return allOperations;

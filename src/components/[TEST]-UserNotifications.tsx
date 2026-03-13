@@ -24,6 +24,7 @@ const shiftColors: Record<ShiftType, string> = {
 };
 
 import { applyShiftOperations, generateMoveOperations, generateSwapOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
+import { SHIFT_ORDER } from '../utils/[TEST]-shiftUtils';
 
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
@@ -257,6 +258,18 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                         <span className="text-slate-400 uppercase font-bold">เวรของคุณ:</span>
                         <span className={clsx("px-1.5 py-0.5 rounded font-bold", getShiftColor(request.target_shift_type))}>
                           {request.target_shift_id ? formatDateSafe(request.target_date) : 'ช่องว่าง'} ({getShiftLabel(request.target_shift_type)})
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-100">
+                        <span className="text-slate-400 uppercase font-bold">กะใหม่หลังรวม:</span>
+                        <span className="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700">
+                          {(() => {
+                            const targetTypes = request.target_shift_type && request.target_shift_type !== 'O' ? request.target_shift_type.split(',') : [];
+                            const requesterTypes = request.requester_shift_type.split(',');
+                            const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
+                              .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
+                            return combined.map(t => shiftLabels[t as ShiftType] || t).join(' | ');
+                          })()}
                         </span>
                       </div>
                     </div>

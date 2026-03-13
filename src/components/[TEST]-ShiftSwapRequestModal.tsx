@@ -4,6 +4,7 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, addDays } from 'date-fns';
 import clsx from 'clsx';
 import { generateSwapOperations, validateShiftOperations } from '../lib/[TEST]-shiftOperations';
+import { SHIFT_ORDER } from '../utils/[TEST]-shiftUtils';
 
 interface ShiftSwapRequestModalProps {
   isOpen: boolean;
@@ -278,7 +279,13 @@ export function ShiftSwapRequestModal({
               </div>
               <div className="bg-white/50 rounded-lg p-3 text-[10px] text-emerald-800 border border-emerald-100/50">
                 <p className="font-bold mb-1">💡 ข้อมูลการย้าย:</p>
-                <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type} → {selectedRequesterShift.shift_type}/{selectedTargetShift.shift_type})</p>
+                <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type === 'O' ? '-' : selectedTargetShift.shift_type} → {(() => {
+                  const targetTypes = selectedTargetShift.shift_type && selectedTargetShift.shift_type !== 'O' ? selectedTargetShift.shift_type.split(',') : [];
+                  const requesterTypes = (selectedShiftType || selectedRequesterShift.shift_type).split(',');
+                  const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
+                    .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
+                  return combined.join(' | ');
+                })()})</p>
                 <p className="mt-1 text-emerald-600 font-medium">✨ สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการและวันหยุดนักขัตฤกษ์</p>
               </div>
             </div>

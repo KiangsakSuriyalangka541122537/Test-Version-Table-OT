@@ -5,6 +5,7 @@ import { format, isValid, addDays } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
 import { applyShiftOperations, generateMoveOperations, generateSwapOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
+import { SHIFT_ORDER } from '../utils/[TEST]-shiftUtils';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];
@@ -213,11 +214,24 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
                   <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการย้ายไปให้</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.target_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.target_date)}</p>
-                  <p className="text-sm text-gray-700">กะเดิม: 
-                    <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", getShiftColor(request.target_shift_type))}>
-                      {getShiftLabel(request.target_shift_type)} ({request.target_shift_type})
-                    </span>
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500">กะเดิม: 
+                      <span className={clsx("px-1.5 py-0.5 rounded text-[10px] font-bold ml-1", getShiftColor(request.target_shift_type))}>
+                        {getShiftLabel(request.target_shift_type)}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-500">กะใหม่หลังรวม: 
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold ml-1 bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        {(() => {
+                          const targetTypes = request.target_shift_type && request.target_shift_type !== 'O' ? request.target_shift_type.split(',') : [];
+                          const requesterTypes = request.requester_shift_type.split(',');
+                          const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
+                            .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
+                          return combined.map(t => shiftLabels[t as ShiftType] || t).join(' | ');
+                        })()}
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
