@@ -305,7 +305,10 @@ export default function App() {
       await applyShiftOperations(allOperations);
 
       // 3. Update request status
-      await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
+      await supabase.from('test_shift_swap_requests').update({ 
+        status: ShiftSwapStatus.APPROVED,
+        updated_at: new Date().toISOString()
+      }).eq('id', requestId);
       
       await supabase.from('test_logs').insert({
         message: `Shift swap request ${requestId} approved. Requester: ${request.requester_staff_id}, Target: ${request.target_staff_id}`,
@@ -332,7 +335,8 @@ export default function App() {
         target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
           ? request.target_shift_id 
           : null,
-        status: initialStatus
+        status: initialStatus,
+        updated_at: new Date().toISOString()
       });
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));

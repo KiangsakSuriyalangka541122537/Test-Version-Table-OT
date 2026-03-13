@@ -26,11 +26,12 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       console.log('Fetching history for month:', format(currentMonth, 'yyyy-MM'));
       
       // Fetch more records to ensure we don't miss any after filtering
+      // We order by created_at desc to get the most recent requests first
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(100);
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (error) {
         console.error('Supabase error fetching history:', error);
@@ -115,6 +116,16 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 mr-2">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">สำเร็จ {history.filter(h => h.status === ShiftSwapStatus.APPROVED).length}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">รอยืนยัน {history.filter(h => h.status === ShiftSwapStatus.WAITING_TARGET).length}</span>
+            </div>
+          </div>
           <button 
             onClick={() => fetchHistory()}
             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
@@ -155,7 +166,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold">
                         <Clock className="w-3.5 h-3.5" />
-                        <span>{format(new Date(item.updated_at), 'd MMMM yyyy HH:mm', { locale: th })}</span>
+                        <span>{format(new Date(item.updated_at || item.created_at), 'd MMMM yyyy HH:mm', { locale: th })}</span>
                       </div>
                     </div>
 
