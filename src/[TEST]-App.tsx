@@ -813,6 +813,7 @@ export default function App() {
         initialTargetShift={targetShiftToSwap}
         allStaff={staffList}
         allShifts={shifts}
+        currentMonth={currentMonth}
       />
 
       {/* Shift Type Selection Modal */}

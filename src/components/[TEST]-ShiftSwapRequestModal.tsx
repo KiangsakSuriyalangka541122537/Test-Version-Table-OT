@@ -16,6 +16,7 @@ interface ShiftSwapRequestModalProps {
   initialTargetShift: Shift | null; // Optional: The shift the user clicked (if it's someone else's)
   allStaff: Staff[];
   allShifts: Shift[];
+  currentMonth: Date;
 }
 
 const shiftLabels: Record<ShiftType, string> = {
@@ -39,6 +40,7 @@ export function ShiftSwapRequestModal({
   initialTargetShift,
   allStaff,
   allShifts,
+  currentMonth,
 }: ShiftSwapRequestModalProps) {
   const [requesterShiftId, setRequesterShiftId] = useState<string>('');
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
@@ -208,6 +210,20 @@ export function ShiftSwapRequestModal({
 
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
+  // Generate all days in the current month for the dropdown
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const days = [];
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    for (let i = 1; i <= lastDay; i++) {
+      days.push(new Date(year, month, i));
+    }
+    return days;
+  };
+
+  const monthDays = getDaysInMonth(currentMonth);
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
       <div className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
@@ -344,14 +360,21 @@ export function ShiftSwapRequestModal({
                     onChange={(e) => setTargetShiftId(e.target.value)}
                     className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
                   >
-                    <option value="">-- เลือกกะเป้าหมาย --</option>
-                    {allShifts
-                      .filter(shift => shift.staff_id === targetStaffId)
-                      .map(shift => (
-                        <option key={shift.id} value={shift.id}>
-                          {getShiftLabel(shift.shift_type)} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
+                    <option value="">-- เลือกวันที่เป้าหมาย --</option>
+                    {monthDays.map(day => {
+                      const dateStr = format(day, 'yyyy-MM-dd');
+                      const existingShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === dateStr);
+                      const value = existingShift ? existingShift.id : `empty-${targetStaffId}-${dateStr}`;
+                      const label = existingShift 
+                        ? `${getShiftLabel(existingShift.shift_type)} (${existingShift.shift_type}) - ${format(day, 'dd/MM/yyyy')}`
+                        : `ช่องว่าง - ${format(day, 'dd/MM/yyyy')}`;
+                      
+                      return (
+                        <option key={value} value={value}>
+                          {label}
                         </option>
-                      ))}
+                      );
+                    })}
                   </select>
                 </div>
               )}
