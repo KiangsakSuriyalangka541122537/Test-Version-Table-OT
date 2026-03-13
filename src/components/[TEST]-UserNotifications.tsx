@@ -23,6 +23,8 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
+import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
+
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,11 +96,46 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const handleAccept = async (request: ShiftSwapRequest) => {
     setLoading(true);
     try {
-      // Update request status to PENDING (waiting for admin)
+      // 1. Generate and apply shift operations immediately
+      const allOperations: ShiftOperation[] = [];
+      
+      // Move requester's shift to target
+      const requesterTypes = request.requester_shift_type ? request.requester_shift_type.split(',') : [];
+      for (const type of requesterTypes) {
+        if (!type.trim() || type.trim() === 'O') continue;
+        const operations = generateMoveOperations(
+          request.requester_staff_id,
+          request.requester_date,
+          request.target_staff_id,
+          request.target_date,
+          type.trim() as ShiftType
+        );
+        allOperations.push(...operations);
+      }
+
+      // If it's a swap (target has a shift), move target's shift to requester
+      if (request.target_shift_type && request.target_shift_type !== 'O') {
+        const targetTypes = request.target_shift_type.split(',');
+        for (const type of targetTypes) {
+          if (!type.trim() || type.trim() === 'O') continue;
+          const operations = generateMoveOperations(
+            request.target_staff_id,
+            request.target_date,
+            request.requester_staff_id,
+            request.requester_date,
+            type.trim() as ShiftType
+          );
+          allOperations.push(...operations);
+        }
+      }
+
+      await applyShiftOperations(allOperations);
+
+      // 2. Update request status to APPROVED
       const { error } = await supabase
         .from('test_shift_swap_requests')
         .update({ 
-          status: ShiftSwapStatus.PENDING, 
+          status: ShiftSwapStatus.APPROVED, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', request.id);
@@ -106,11 +143,11 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (error) throw error;
 
       await supabase.from('test_logs').insert({
-        message: `Staff ${user.name} accepted move request ${request.id}. Waiting for admin approval.`,
-        action_type: 'SHIFT_MOVE_ACCEPTED_BY_TARGET'
+        message: `Staff ${user.name} accepted move request ${request.id}. Shifts updated immediately.`,
+        action_type: 'SHIFT_MOVE_COMPLETED'
       });
 
-      alert('ยืนยันการรับเวรเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
+      alert('ยืนยันการรับเวรเรียบร้อยแล้ว ตารางเวรถูกอัปเดตทันที');
       fetchUserRequests();
       onUpdate(); // Refresh the main grid
       setIsOpen(false);

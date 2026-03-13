@@ -80,13 +80,17 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
   };
 
   const getShiftLabel = (type: string) => {
-    switch (type) {
-      case 'M': return 'ช';
-      case 'A': return 'บ';
-      case 'N': return 'ด';
-      case 'O': return 'หยุด';
-      default: return type;
-    }
+    if (!type) return 'หยุด';
+    return type.split(',').map(t => {
+      const trimmed = t.trim();
+      switch (trimmed) {
+        case 'M': return 'ช';
+        case 'A': return 'บ';
+        case 'N': return 'ด';
+        case 'O': return 'หยุด';
+        default: return trimmed;
+      }
+    }).join(' + ');
   };
 
   if (loading) {
