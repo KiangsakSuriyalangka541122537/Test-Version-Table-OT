@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ShiftSwapRequest, ShiftSwapStatus, Staff } from '../types';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { ArrowRightLeft, Calendar, User, Clock } from 'lucide-react';
 import clsx from 'clsx';
@@ -23,43 +23,46 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      // Get start and end of the current month to filter history?
-      // Or just show latest 10-20 swaps regardless of month?
-      // User said "below the roster calendar", implying it might be relevant to the displayed month.
-      // However, swaps are actions. Usually we want to see recent actions.
-      // Let's filter by the month of the *requester_date* or *target_date* matching the current month.
+      console.log('Fetching history for month:', format(currentMonth, 'yyyy-MM'));
       
-      const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
-      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString();
-
-      // Supabase doesn't support complex OR filtering easily across different columns with dates in one go without raw SQL or multiple queries.
-      // Let's just fetch recent approved swaps and filter client side or just fetch last 50.
-      // "History of shift swaps" usually implies recent activity.
-      
+      // Fetch more records to ensure we don't miss any after filtering
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
         .order('updated_at', { ascending: false })
-        .limit(20);
+        .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching history:', error);
+        throw error;
+      }
       
-      // Filter to show only swaps relevant to the current month view?
-      // Or just show all recent history?
-      // "History of shift swaps" usually means "What happened recently".
-      // But if it's "below the roster", maybe it should show swaps *for this month*.
-      // Let's filter client side for relevance to current month if possible, or just show all recent.
-      // Showing all recent is safer to ensure visibility of actions.
-      // But user said "flexible according to screen like the roster".
-      
-      // Let's try to show swaps that involve dates in the current month.
+      console.log('Total records fetched:', data?.length);
+
+      // Filter to show swaps relevant to the current month view
+      // We show swaps where:
+      // 1. Either the requester date or target date is in the current month
+      // 2. OR the action (updated_at or created_at) was performed in the current month
       const currentMonthStr = format(currentMonth, 'yyyy-MM');
-      const filtered = (data || []).filter(item => 
-        item.requester_date.startsWith(currentMonthStr) || 
-        item.target_date.startsWith(currentMonthStr)
-      );
+      const filtered = (data || []).filter(item => {
+        const isShiftInMonth = (item.requester_date && item.requester_date.startsWith(currentMonthStr)) || 
+                               (item.target_date && item.target_date.startsWith(currentMonthStr));
+        
+        const actionDate = new Date(item.updated_at || item.created_at);
+        const isActionInMonth = isValid(actionDate) && format(actionDate, 'yyyy-MM') === currentMonthStr;
+        
+        return isShiftInMonth || isActionInMonth;
+      });
 
-      setHistory(filtered);
+      // Sort by updated_at (or created_at if updated_at is null)
+      const sorted = filtered.sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at).getTime();
+        const dateB = new Date(b.updated_at || b.created_at).getTime();
+        return dateB - dateA;
+      });
+
+      console.log('Filtered and sorted records for', currentMonthStr, ':', sorted.length);
+      setHistory(sorted);
     } catch (err) {
       console.error('Error fetching history:', err);
     } finally {
@@ -108,11 +111,20 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
           </div>
           <div>
             <h3 className="font-bold text-slate-900 text-lg tracking-tight">บันทึกประวัติการย้ายเวร</h3>
-            <p className="text-slate-500 text-xs font-medium">รายการย้ายเวรที่เกิดขึ้นในเดือน{format(currentMonth, 'MMMM', { locale: th })}</p>
+            <p className="text-slate-500 text-xs font-medium">รายการย้ายเวรที่เกี่ยวข้องกับเดือน{format(currentMonth, 'MMMM', { locale: th })}</p>
           </div>
         </div>
-        <div className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-indigo-100">
-          {history.length} รายการ
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => fetchHistory()}
+            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+            title="รีเฟรชประวัติ"
+          >
+            <Clock className={clsx("w-4 h-4", loading && "animate-spin")} />
+          </button>
+          <div className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-indigo-100">
+            {history.length} รายการ
+          </div>
         </div>
       </div>
       
