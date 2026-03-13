@@ -64,7 +64,12 @@ export default function App() {
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin' && user?.username === 'kik';
   const pdfRef = React.useRef<HTMLDivElement>(null);
+  const historyRef = React.useRef<HTMLDivElement>(null);
   const [lastActionTimestamp, setLastActionTimestamp] = useState<number>(Date.now());
+
+  const scrollToHistory = () => {
+    historyRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const cleanupDuplicates = async () => {
@@ -302,6 +307,11 @@ export default function App() {
       // 3. Update request status
       await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
       
+      await supabase.from('test_logs').insert({
+        message: `Shift swap request ${requestId} approved. Requester: ${request.requester_staff_id}, Target: ${request.target_staff_id}`,
+        action_type: 'SHIFT_SWAP_APPROVED'
+      });
+
       fetchData();
       alert('ยอมรับการย้ายเวรเรียบร้อยแล้ว');
     } catch (err: any) {
@@ -637,6 +647,7 @@ export default function App() {
         onExportExcel={handleExportExcel}
         onAdminClick={() => setIsAdminOpen(true)}
         onStatsClick={() => setIsStatsOpen(true)}
+        onHistoryClick={scrollToHistory}
         isPublished={rosterStatus?.is_published || false}
         onPublishToggle={handlePublishToggle}
         onResetMonth={handleResetMonth}
@@ -776,11 +787,13 @@ export default function App() {
                   approvedSwaps={approvedSwaps}
                 />
                 
-                <ShiftSwapHistory 
-                  staffList={staffList}
-                  currentMonth={currentMonth}
-                  lastUpdated={lastActionTimestamp}
-                />
+                <div ref={historyRef}>
+                  <ShiftSwapHistory 
+                    staffList={staffList}
+                    currentMonth={currentMonth}
+                    lastUpdated={lastActionTimestamp}
+                  />
+                </div>
               </>
             )}
           </div>
