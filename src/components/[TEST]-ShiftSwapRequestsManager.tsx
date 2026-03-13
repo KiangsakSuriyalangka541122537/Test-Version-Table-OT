@@ -4,7 +4,7 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, isValid, addDays } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
+import { applyShiftOperations, generateMoveOperations, generateSwapOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];
@@ -62,9 +62,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       // Check for A/N conflict in target cell
       const targetShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
       const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      
-      // If target_shift_type is 'O', it's a combine. If it's not 'O', it's a swap, so targetTypes will be replaced by types.
-      const combinedTypes = request.target_shift_type === 'O' ? Array.from(new Set([...targetTypes, ...types])) : [...types];
+      const combinedTypes = Array.from(new Set([...targetTypes, ...types]));
       
       if (combinedTypes.includes('A') && combinedTypes.includes('N')) {
         setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกัน');
@@ -72,77 +70,22 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         return;
       }
 
-      if (combinedTypes.length > 2) {
-        setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้มีมากกว่า 2 เวรใน 1 วัน');
+      // 1. Generate and apply shift operations immediately
+      try {
+        const allOperations = generateSwapOperations(
+          request.requester_staff_id,
+          request.requester_date,
+          request.requester_shift_type,
+          request.target_staff_id,
+          request.target_date,
+          request.target_shift_type
+        );
+        await applyShiftOperations(allOperations);
+      } catch (err: any) {
+        setError(err.message || 'ไม่สามารถอนุมัติได้เนื่องจากละเมิดกฎการจัดเวร');
         setLoading(false);
         return;
       }
-
-      // Check for daily uniqueness (M, A, N cannot duplicate across staff)
-      for (const type of types) {
-        if (['M', 'A', 'N'].includes(type)) {
-          const isAssignedToOther = allShifts.some(s => 
-            s.date === request.target_date && 
-            s.staff_id !== request.target_staff_id && 
-            s.staff_id !== request.requester_staff_id && // Ignore the requester who is giving up this shift
-            s.shift_type && 
-            s.shift_type.split(',').map(t => t.trim()).includes(type)
-          );
-          if (isAssignedToOther) {
-            const typeLabel = type === 'M' ? 'เช้า (ช)' : type === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)';
-            setError(`ไม่สามารถอนุมัติได้เนื่องจากเวร${typeLabel} มีผู้รับผิดชอบแล้ว ห้ามจัดซ้ำในวันเดียวกัน`);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
-      // Check for A/N conflict on next day if moving A
-      if (types.includes('A')) {
-        const nextDay = format(addDays(new Date(request.target_date), 1), 'yyyy-MM-dd');
-        const targetNextShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === nextDay);
-        const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-        if (targetNextTypes.includes('A')) {
-          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไปของพนักงานปลายทาง');
-          setLoading(false);
-          return;
-        }
-        if (targetNextTypes.length >= 2 && !targetNextTypes.includes('N')) {
-          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้วันถัดไปของพนักงานปลายทางมีเวรเกิน 2 เวร');
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // Check for A/N conflict on previous day if moving N
-      if (types.includes('N')) {
-        const prevDay = format(addDays(new Date(request.target_date), -1), 'yyyy-MM-dd');
-        const targetPrevShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === prevDay);
-        const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-        if (targetPrevTypes.includes('N')) {
-          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้าของพนักงานปลายทาง');
-          setLoading(false);
-          return;
-        }
-        if (targetPrevTypes.length >= 2 && !targetPrevTypes.includes('A')) {
-          setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้วันก่อนหน้าของพนักงานปลายทางมีเวรเกิน 2 เวร');
-          setLoading(false);
-          return;
-        }
-      }
-
-      const allOperations: ShiftOperation[] = [];
-      for (const type of types) {
-        const operations = generateMoveOperations(
-          request.requester_staff_id,
-          request.requester_date,
-          request.target_staff_id,
-          request.target_date,
-          type.trim() as ShiftType
-        );
-        allOperations.push(...operations);
-      }
-      await applyShiftOperations(allOperations);
 
       // 2. Update request status
       const { error: updateError } = await supabase.from('test_shift_swap_requests').update({ 
@@ -161,9 +104,9 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       alert('อนุมัติคำขอย้ายเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error approving move request:', err);
-      setError('เกิดข้อผิดพลาดในการอนุมัติคำขอ');
+      setError(err.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ');
     } finally {
       setLoading(false);
     }

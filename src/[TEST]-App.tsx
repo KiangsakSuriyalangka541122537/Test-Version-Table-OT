@@ -18,7 +18,7 @@ import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
-import { applyShiftOperations, ShiftOperation } from './lib/[TEST]-shiftOperations';
+import { applyShiftOperations, generateSwapOperations, ShiftOperation } from './lib/[TEST]-shiftOperations';
 
 /**
  * Safely parses a date string in YYYY-MM-DD format to a Date object at 00:00:00 local time.
@@ -271,34 +271,27 @@ export default function App() {
     const { data: request, error: fetchError } = await supabase.from('test_shift_swap_requests').select('*').eq('id', requestId).single();
     if (fetchError || !request) return;
 
-    // 2. Perform move/merge
-    const targetShift = shifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
-    
-    if (targetShift) {
-      // Merge
-      const targetTypes = targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
-      const sourceTypes = request.requester_shift_type.split(',').map(t => t.trim()).filter(Boolean);
-      const mergedTypes = Array.from(new Set([...targetTypes, ...sourceTypes]));
-      const newShiftTypeStr = mergedTypes.join(',');
+    try {
+      // 2. Generate and apply shift operations
+      const allOperations = generateSwapOperations(
+        request.requester_staff_id,
+        request.requester_date,
+        request.requester_shift_type,
+        request.target_staff_id,
+        request.target_date,
+        request.target_shift_type
+      );
+      await applyShiftOperations(allOperations);
 
-      await supabase.from('test_shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
-    } else {
-      // Move
-      await supabase.from('test_shifts').insert({
-        staff_id: request.target_staff_id,
-        date: request.target_date,
-        shift_type: request.requester_shift_type
-      });
+      // 3. Update request status
+      await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
+      
+      fetchData();
+      alert('ยอมรับการย้ายเวรเรียบร้อยแล้ว');
+    } catch (err: any) {
+      console.error('Error accepting swap request:', err);
+      alert(`เกิดข้อผิดพลาด: ${err.message}`);
     }
-
-    // 3. Delete source
-    await supabase.from('test_shifts').delete().eq('id', request.requester_shift_id);
-
-    // 4. Update request status
-    await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
-    
-    fetchData();
-    alert('ยอมรับการย้ายเวรเรียบร้อยแล้ว');
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {

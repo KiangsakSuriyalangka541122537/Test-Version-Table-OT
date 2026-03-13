@@ -3,6 +3,7 @@ import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
 import { format, addDays } from 'date-fns';
 import clsx from 'clsx';
+import { generateSwapOperations, validateShiftOperations } from '../lib/[TEST]-shiftOperations';
 
 interface ShiftSwapRequestModalProps {
   isOpen: boolean;
@@ -105,36 +106,6 @@ export function ShiftSwapRequestModal({
         setError('ไม่สามารถย้ายเวรประเภทเดียวกันไปรวมกันได้');
         return;
       }
-
-      // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
-      const combinedTypes = [...targetTypes, ...sourceTypes];
-      const hasA = combinedTypes.includes('A');
-      const hasN = combinedTypes.includes('N');
-      if (hasA && hasN) {
-        setError('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
-        return;
-      }
-
-      // Rule: Daily uniqueness (M, A, N cannot duplicate across staff)
-      const targetDateStr = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
-      if (targetDateStr) {
-        for (const type of sourceTypes) {
-          if (['M', 'A', 'N'].includes(type)) {
-            const isAssignedToOther = allShifts.some(s => 
-              s.date === targetDateStr && 
-              s.staff_id !== targetStaffId && 
-              s.staff_id !== requesterShift.staff_id && // Ignore the requester
-              s.shift_type && 
-              s.shift_type.split(',').map(t => t.trim()).includes(type)
-            );
-            if (isAssignedToOther) {
-              const typeLabel = type === 'M' ? 'เช้า (ช)' : type === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)';
-              setError(`ไม่สามารถย้ายได้เนื่องจากเวร${typeLabel} มีผู้รับผิดชอบแล้ว ห้ามจัดซ้ำในวันเดียวกัน`);
-              return;
-            }
-          }
-        }
-      }
     }
 
     const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
@@ -144,38 +115,24 @@ export function ShiftSwapRequestModal({
       return;
     }
 
-    // Check for A/N conflict on next day if moving A
-    if (requesterShift.shift_type.includes('A')) {
-      const nextDay = format(addDays(new Date(targetDate), 1), 'yyyy-MM-dd');
-      const targetNextShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === nextDay);
-      const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      if (targetNextTypes.includes('A')) {
-        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันถัดไปของพนักงานปลายทาง');
-        return;
-      }
-      if (targetNextTypes.length >= 2 && !targetNextTypes.includes('N')) {
-        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้วันถัดไปของพนักงานปลายทางมีเวรเกิน 2 เวร');
-        return;
-      }
-    }
-    
-    // Check for A/N conflict on previous day if moving N
-    if (requesterShift.shift_type.includes('N')) {
-      const prevDay = format(addDays(new Date(targetDate), -1), 'yyyy-MM-dd');
-      const targetPrevShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === prevDay);
-      const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      if (targetPrevTypes.includes('N')) {
-        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในวันก่อนหน้าของพนักงานปลายทาง');
-        return;
-      }
-      if (targetPrevTypes.length >= 2 && !targetPrevTypes.includes('A')) {
-        setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้วันก่อนหน้าของพนักงานปลายทางมีเวรเกิน 2 เวร');
-        return;
-      }
-    }
-
     // Determine which shift type to move
     let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
+
+    // Validate using virtual state logic
+    try {
+      const operations = generateSwapOperations(
+        currentStaff.id,
+        requesterShift.date,
+        shiftTypeToMove,
+        targetStaffId,
+        targetDate,
+        targetShift?.shift_type || 'O'
+      );
+      validateShiftOperations(allShifts, operations);
+    } catch (err: any) {
+      setError(err.message);
+      return;
+    }
     
     setLoading(true);
     try {

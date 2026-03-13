@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { format, addDays } from 'date-fns';
-import { ShiftType } from '../types';
+import { ShiftType, Shift } from '../types';
 
 export interface ShiftOperation {
   staffId: string;
@@ -19,23 +19,13 @@ const parseDateSafe = (dateStr: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-export const applyShiftOperations = async (operations: ShiftOperation[]) => {
+export const validateShiftOperations = (
+  allShifts: Shift[],
+  operations: ShiftOperation[]
+) => {
   if (operations.length === 0) return;
 
-  const affectedDates = [...new Set(operations.map(op => op.date))];
-  
-  // 1. Fetch ALL existing shifts for the affected dates
-  const { data: allShifts, error: fetchError } = await supabase
-    .from('test_shifts')
-    .select('*')
-    .in('date', affectedDates);
-    
-  if (fetchError) {
-    console.error('Error fetching shifts:', fetchError);
-    throw new Error('Failed to fetch shifts for validation');
-  }
-
-  // 2. Build virtual state: date -> staffId -> Set of shift types
+  // 1. Build virtual state: date -> staffId -> Set of shift types
   const virtualState: Record<string, Record<string, Set<string>>> = {};
   
   if (allShifts) {
@@ -52,16 +42,10 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     }
   }
 
-  // Keep track of which cells were actually modified
-  const modifiedCells = new Set<string>(); // "staffId_date"
-
-  // 3. Apply operations to virtual state
+  // 2. Apply operations to virtual state
   for (const op of operations) {
     if (!virtualState[op.date]) virtualState[op.date] = {};
     if (!virtualState[op.date][op.staffId]) virtualState[op.date][op.staffId] = new Set();
-    
-    const cellKey = `${op.staffId}_${op.date}`;
-    modifiedCells.add(cellKey);
     
     if (op.action === 'add') {
       virtualState[op.date][op.staffId].add(op.type);
@@ -70,7 +54,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     }
   }
 
-  // 4. Validate virtual state
+  // 3. Validate virtual state
   for (const date in virtualState) {
     const dailyCounts: Record<string, number> = { 'M': 0, 'A': 0, 'N': 0 };
     
@@ -101,7 +85,36 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     if (dailyCounts['N'] > 1) throw new Error(`เวรดึก (ด) มีผู้รับผิดชอบแล้ว ห้ามจัดซ้ำในวันเดียวกัน (วันที่ ${date})`);
   }
 
-  // 5. Prepare cell updates for modified cells
+  return virtualState;
+};
+
+export const applyShiftOperations = async (operations: ShiftOperation[]) => {
+  if (operations.length === 0) return;
+
+  const affectedDates = [...new Set(operations.map(op => op.date))];
+  
+  // 1. Fetch ALL existing shifts for the affected dates
+  const { data: allShifts, error: fetchError } = await supabase
+    .from('test_shifts')
+    .select('*')
+    .in('date', affectedDates);
+    
+  if (fetchError) {
+    console.error('Error fetching shifts:', fetchError);
+    throw new Error('Failed to fetch shifts for validation');
+  }
+
+  // 2. Validate and get virtual state
+  const virtualState = validateShiftOperations(allShifts || [], operations);
+  if (!virtualState) return;
+
+  // 3. Keep track of which cells were actually modified
+  const modifiedCells = new Set<string>(); // "staffId_date"
+  for (const op of operations) {
+    modifiedCells.add(`${op.staffId}_${op.date}`);
+  }
+
+  // 4. Prepare cell updates for modified cells
   const cellUpdates: { staffId: string; date: string; existingIds: string[]; newTypes: string[] }[] = [];
   
   for (const cellKey of modifiedCells) {
@@ -117,7 +130,7 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
     cellUpdates.push({ staffId, date, existingIds, newTypes });
   }
 
-  // 6. Apply changes to database
+  // 5. Apply changes to database
   for (const update of cellUpdates) {
     const { staffId, date, existingIds, newTypes } = update;
     const newShiftTypeStr = newTypes.join(',');
@@ -177,4 +190,29 @@ export const generateMoveOperations = (
   }
 
   return operations;
+};
+
+export const generateSwapOperations = (
+  staffAId: string,
+  dateAStr: string,
+  typeA: string, // Can be comma separated
+  staffBId: string,
+  dateBStr: string,
+  typeB: string  // Can be comma separated
+): ShiftOperation[] => {
+  const allOperations: ShiftOperation[] = [];
+
+  // Move A's shifts to B
+  const typesA = typeA.split(',').map(t => t.trim()).filter(t => t !== 'O' && Boolean(t));
+  for (const t of typesA) {
+    allOperations.push(...generateMoveOperations(staffAId, dateAStr, staffBId, dateBStr, t as ShiftType));
+  }
+
+  // Move B's shifts to A
+  const typesB = typeB.split(',').map(t => t.trim()).filter(t => t !== 'O' && Boolean(t));
+  for (const t of typesB) {
+    allOperations.push(...generateMoveOperations(staffBId, dateBStr, staffAId, dateAStr, t as ShiftType));
+  }
+
+  return allOperations;
 };

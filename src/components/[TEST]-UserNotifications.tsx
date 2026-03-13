@@ -23,7 +23,7 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
+import { applyShiftOperations, generateMoveOperations, generateSwapOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
 
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
@@ -97,38 +97,14 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     setLoading(true);
     try {
       // 1. Generate and apply shift operations immediately
-      const allOperations: ShiftOperation[] = [];
-      
-      // Move requester's shift to target
-      const requesterTypes = request.requester_shift_type ? request.requester_shift_type.split(',') : [];
-      for (const type of requesterTypes) {
-        if (!type.trim() || type.trim() === 'O') continue;
-        const operations = generateMoveOperations(
-          request.requester_staff_id,
-          request.requester_date,
-          request.target_staff_id,
-          request.target_date,
-          type.trim() as ShiftType
-        );
-        allOperations.push(...operations);
-      }
-
-      // If it's a swap (target has a shift), move target's shift to requester
-      if (request.target_shift_type && request.target_shift_type !== 'O') {
-        const targetTypes = request.target_shift_type.split(',');
-        for (const type of targetTypes) {
-          if (!type.trim() || type.trim() === 'O') continue;
-          const operations = generateMoveOperations(
-            request.target_staff_id,
-            request.target_date,
-            request.requester_staff_id,
-            request.requester_date,
-            type.trim() as ShiftType
-          );
-          allOperations.push(...operations);
-        }
-      }
-
+      const allOperations = generateSwapOperations(
+        request.requester_staff_id,
+        request.requester_date,
+        request.requester_shift_type,
+        request.target_staff_id,
+        request.target_date,
+        request.target_shift_type
+      );
       await applyShiftOperations(allOperations);
 
       // 2. Update request status to APPROVED
