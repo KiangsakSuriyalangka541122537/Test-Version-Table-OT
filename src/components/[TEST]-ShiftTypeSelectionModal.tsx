@@ -12,9 +12,9 @@ interface ShiftTypeSelectionModalProps {
 }
 
 const shiftLabels: Record<string, string> = {
-  M: 'เช้า (ช)',
-  A: 'บ่าย (บ)',
-  N: 'ดึก (ด)',
+  M: 'เช้า',
+  A: 'บ่าย',
+  N: 'ดึก',
 };
 
 const shiftColors: Record<string, string> = {
@@ -63,7 +63,7 @@ export function ShiftTypeSelectionModal({
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-black">M</span>
-                  <span className="font-bold text-sm">ย้ายเวรเช้า (ช)</span>
+                  <span className="font-bold text-sm">ย้ายเวรเช้า</span>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-white transition-colors">
                   <div className="w-2 h-2 rounded-full bg-current"></div>
@@ -77,9 +77,7 @@ export function ShiftTypeSelectionModal({
               if (others.length === 0) return null;
               
               const combinedType = others.join(',') as ShiftType;
-              const label = others.length > 1 
-                ? 'ย้ายเวร บ+ด' 
-                : `ย้ายเวร${others[0] === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)'}`;
+              const label = 'ย้ายเวร บ่าย+ดึก';
               
               const colorClass = others.length > 1 
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'

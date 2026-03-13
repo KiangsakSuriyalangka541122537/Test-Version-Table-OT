@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sun, Sunset, Moon, Ban, ArrowRightLeft } from 'lucide-react';
+import { X, Sun, Sunset, Moon, Ban } from 'lucide-react';
 import { ShiftType } from '../types';
 import clsx from 'clsx';
 
@@ -13,9 +13,9 @@ interface ShiftEditModalProps {
 }
 
 const shiftOptions: { type: ShiftType | null; label: string; icon: React.ElementType; color: string; desc: string }[] = [
-  { type: 'M', label: 'เช้า (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00' },
-  { type: 'A', label: 'บ่าย (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00' },
-  { type: 'N', label: 'ดึก (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00' },
+  { type: 'M', label: 'เช้า', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00' },
+  { type: 'A', label: 'บ่าย', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00' },
+  { type: 'N', label: 'ดึก', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00' },
   { type: null, label: 'ลบกะนี้', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'ลบกะที่เลือก' },
 ];
 
@@ -82,25 +82,6 @@ export function ShiftEditModal({ isOpen, onClose, onSave, currentShifts, staffNa
             );
           })}
         </div>
-
-        {currentShifts.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <button
-              onClick={() => {
-                // Trigger swap flow
-                const event = new CustomEvent('trigger-swap', { 
-                  detail: { staffName, dateStr, currentShifts } 
-                });
-                window.dispatchEvent(event);
-                onClose();
-              }}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-bold hover:bg-amber-100 transition-all shadow-sm"
-            >
-              <ArrowRightLeft className="w-4 h-4" />
-              สลับเวรนี้กับคนอื่น (บันทึกประวัติ)
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

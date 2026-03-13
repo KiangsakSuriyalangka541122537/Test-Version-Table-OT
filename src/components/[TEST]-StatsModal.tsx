@@ -153,9 +153,9 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="M" stackId="a" fill="#3b82f6" name="เช้า (M)" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="A" stackId="a" fill="#f97316" name="บ่าย (A)" />
-                  <Bar dataKey="N" stackId="a" fill="#a855f7" name="ดึก (N)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="M" stackId="a" fill="#3b82f6" name="เช้า" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="A" stackId="a" fill="#f97316" name="บ่าย" />
+                  <Bar dataKey="N" stackId="a" fill="#a855f7" name="ดึก" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -177,9 +177,9 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
                 <thead className="bg-white">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">พนักงาน</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">เช้า (M)</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">บ่าย (A)</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">ดึก (N)</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">เช้า</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">บ่าย</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">ดึก</th>
                     <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">รวมกะ</th>
                     <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">ค่าล่วงเวลา (฿)</th>
                   </tr>

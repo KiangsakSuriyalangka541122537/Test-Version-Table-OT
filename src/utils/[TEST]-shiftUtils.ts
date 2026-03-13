@@ -9,9 +9,9 @@ export const SHIFT_ORDER: Record<string, number> = {
 };
 
 export const SHIFT_LABELS: Record<string, string> = {
-  'M': 'ช',
-  'A': 'บ',
-  'N': 'ด',
+  'M': 'เช้า',
+  'A': 'บ่าย',
+  'N': 'ดึก',
   'O': 'หยุด',
   'OT': 'OT'
 };
