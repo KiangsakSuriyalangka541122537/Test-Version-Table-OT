@@ -78,14 +78,16 @@ export function Header({
             </div>
 
             <div className="hidden md:flex items-center space-x-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-              <button 
-                onClick={onStatsClick} 
-                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all group" 
-                title="สถิติ"
-              >
-                <BarChart2 className="w-4 h-4 transition-transform group-hover:scale-110" />
-                <span className="text-xs font-medium">สถิติ</span>
-              </button>
+              {user && (
+                <button 
+                  onClick={onStatsClick} 
+                  className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all group" 
+                  title="สถิติ"
+                >
+                  <BarChart2 className="w-4 h-4 transition-transform group-hover:scale-110" />
+                  <span className="text-xs font-medium">สถิติ</span>
+                </button>
+              )}
 
               <button 
                 onClick={onHelpClick} 
@@ -96,25 +98,29 @@ export function Header({
                 <span className="text-xs font-medium">วิธีใช้งาน</span>
               </button>
               
-              <div className="w-px h-6 bg-slate-100 mx-1"></div>
-              
-              <button 
-                onClick={onExportPDF} 
-                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all group" 
-                title="ส่งออก PDF"
-              >
-                <FileText className="w-4 h-4 transition-transform group-hover:scale-110" />
-                <span className="text-xs font-medium">PDF</span>
-              </button>
-              
-              <button 
-                onClick={onExportExcel} 
-                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all group" 
-                title="ส่งออก Excel"
-              >
-                <FileSpreadsheet className="w-4 h-4 transition-transform group-hover:scale-110" />
-                <span className="text-xs font-medium">Excel</span>
-              </button>
+              {user && (
+                <>
+                  <div className="w-px h-6 bg-slate-100 mx-1"></div>
+                  
+                  <button 
+                    onClick={onExportPDF} 
+                    className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all group" 
+                    title="ส่งออก PDF"
+                  >
+                    <FileText className="w-4 h-4 transition-transform group-hover:scale-110" />
+                    <span className="text-xs font-medium">PDF</span>
+                  </button>
+                  
+                  <button 
+                    onClick={onExportExcel} 
+                    className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all group" 
+                    title="ส่งออก Excel"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 transition-transform group-hover:scale-110" />
+                    <span className="text-xs font-medium">Excel</span>
+                  </button>
+                </>
+              )}
             </div>
 
             {isAdmin && (
