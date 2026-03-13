@@ -165,7 +165,7 @@ export function ShiftSwapRequestModal({
   };
 
   const getSummaryShiftLabel = (type: string) => {
-    if (!type || type === 'O') return 'หยุด';
+    if (!type || type === 'O') return 'วันหยุด';
     const types = type.split(',').map(t => t.trim());
     if (types.includes('A') || types.includes('N')) {
       return 'บ่าย + ดึก';
@@ -237,14 +237,14 @@ export function ShiftSwapRequestModal({
                   <div className="text-center space-y-2">
                     <div className="relative mx-auto">
                       <div className={clsx(
-                        "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
+                        "w-28 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
                         selectedShiftType === 'M' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('M')) ? "bg-blue-500 border-blue-200 text-white" :
                         selectedShiftType === 'A' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('A')) ? "bg-orange-500 border-orange-200 text-white" :
                         selectedShiftType === 'N' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('N')) ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-400 border-slate-200 text-white"
                       )}>
                         <span className={clsx(
                           "font-black text-center leading-tight",
-                          (selectedShiftType || selectedRequesterShift.shift_type).includes('A') || (selectedShiftType || selectedRequesterShift.shift_type).includes('N') ? "text-[10px]" : "text-sm"
+                          (selectedShiftType || selectedRequesterShift.shift_type).includes('A') || (selectedShiftType || selectedRequesterShift.shift_type).includes('N') ? "text-xs" : "text-sm"
                         )}>
                           {getSummaryShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}
                         </span>
@@ -269,14 +269,14 @@ export function ShiftSwapRequestModal({
                   <div className="text-center space-y-2">
                     <div className="relative mx-auto">
                       <div className={clsx(
-                        "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
+                        "w-28 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
                         selectedTargetShift.shift_type.includes('M') ? "bg-blue-500 border-blue-200 text-white" :
                         selectedTargetShift.shift_type.includes('A') ? "bg-orange-500 border-orange-200 text-white" :
                         selectedTargetShift.shift_type.includes('N') ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-100 border-slate-200 text-slate-400"
                       )}>
                         <span className={clsx(
                           "font-black text-center leading-tight",
-                          selectedTargetShift.shift_type.includes('A') || selectedTargetShift.shift_type.includes('N') ? "text-[10px]" : "text-sm"
+                          selectedTargetShift.shift_type.includes('A') || selectedTargetShift.shift_type.includes('N') ? "text-xs" : "text-sm"
                         )}>
                           {getSummaryShiftLabel(selectedTargetShift.shift_type)}
                         </span>
