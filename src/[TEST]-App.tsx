@@ -391,14 +391,6 @@ export default function App() {
             alert('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
             return;
           }
-
-          // Special Rule: If cell has M and N, only allow moving M
-          if (currentTypes.includes('M') && currentTypes.includes('N')) {
-            if (newShiftType !== 'M') {
-              alert('ในช่องที่มีเวรเช้า (ช) และเวรดึก (ด) คุณสามารถย้ายได้เฉพาะเวรเช้า (ช) เท่านั้น');
-              return;
-            }
-          }
           
           // Rule: Max 2 shifts per day
           if (currentTypes.length >= 2) {
