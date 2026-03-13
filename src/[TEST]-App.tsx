@@ -12,6 +12,7 @@ import { StatsModal } from './components/[TEST]-StatsModal';
 import { AdminManager } from './components/[TEST]-AdminManager';
 import { ShiftSwapRequestModal } from './components/[TEST]-ShiftSwapRequestModal';
 import { ShiftSwapHistory } from './components/[TEST]-ShiftSwapHistory';
+import { ShiftTypeSelectionModal } from './components/[TEST]-ShiftTypeSelectionModal';
 import { ExportPDFTemplate } from './components/[TEST]-ExportPDFTemplate';
 import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -48,6 +49,10 @@ export default function App() {
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
   const [requesterStaff, setRequesterStaff] = useState<Staff | null>(null);
+  
+  // Shift Type Selection state
+  const [isShiftTypeSelectionOpen, setIsShiftTypeSelectionOpen] = useState(false);
+  const [pendingSelectionData, setPendingSelectionData] = useState<{ staff: Staff, dateStr: string, shift: Shift } | null>(null);
   
   // Shift Edit Modal state
   const [isShiftEditOpen, setIsShiftEditOpen] = useState(false);
@@ -207,6 +212,15 @@ export default function App() {
 
     if (!shiftToSwap) {
       // Select source
+      const types = shift.shift_type ? shift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+      
+      if (!specificType && types.length > 1) {
+        // Multiple shifts and no specific one clicked -> show selection modal
+        setPendingSelectionData({ staff, dateStr, shift });
+        setIsShiftTypeSelectionOpen(true);
+        return;
+      }
+
       setShiftToSwap(shift);
       setSelectedShiftType(specificType || null);
       setRequesterStaff(staff);
@@ -219,6 +233,16 @@ export default function App() {
       } else {
         setTargetShiftToSwap(shift);
       }
+    }
+  };
+
+  const handleShiftTypeSelect = (type: ShiftType) => {
+    if (pendingSelectionData) {
+      setShiftToSwap(pendingSelectionData.shift);
+      setSelectedShiftType(type.includes(',') ? null : type);
+      setRequesterStaff(pendingSelectionData.staff);
+      setPendingSelectionData(null);
+      setIsShiftTypeSelectionOpen(false);
     }
   };
 
@@ -796,6 +820,19 @@ export default function App() {
         initialTargetShift={targetShiftToSwap}
         allStaff={staffList}
         allShifts={shifts}
+      />
+
+      {/* Shift Type Selection Modal */}
+      <ShiftTypeSelectionModal
+        isOpen={isShiftTypeSelectionOpen}
+        onClose={() => {
+          setIsShiftTypeSelectionOpen(false);
+          setPendingSelectionData(null);
+        }}
+        onSelect={handleShiftTypeSelect}
+        shiftTypes={pendingSelectionData?.shift.shift_type.split(',').map(t => t.trim()).filter(Boolean) as ShiftType[] || []}
+        dateStr={pendingSelectionData ? format(new Date(pendingSelectionData.dateStr), 'dd/MM/yyyy') : ''}
+        staffName={pendingSelectionData?.staff.name || ''}
       />
 
       {/* Hidden PDF Template */}

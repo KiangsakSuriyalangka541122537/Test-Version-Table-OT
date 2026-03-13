@@ -42,7 +42,6 @@ export function ShiftSwapRequestModal({
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetStaffId, setTargetStaffId] = useState<string>('');
   const [targetShiftId, setTargetShiftId] = useState<string>('');
-  const [swapMode, setSwapMode] = useState<'SWAP' | 'COMBINE'>('SWAP');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -52,7 +51,6 @@ export function ShiftSwapRequestModal({
       setSelectedShiftType(initialShiftType || null);
       setTargetStaffId(initialTargetShift?.staff_id || '');
       setTargetShiftId(initialTargetShift?.id || '');
-      setSwapMode('SWAP');
       setError(null);
       setLoading(false);
     }
@@ -90,14 +88,10 @@ export function ShiftSwapRequestModal({
       return;
     }
 
-    // Determine which shift type to move
-    let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
-    const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
-
     // Validation logic
     if (targetShift) {
       const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      const sourceTypes = shiftTypeToMove.split(',').map(t => t.trim()).filter(Boolean);
+      const sourceTypes = requesterShift.shift_type ? requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
 
       // Rule: No more than 2 shifts
       if (targetTypes.length + sourceTypes.length > 2) {
@@ -106,16 +100,14 @@ export function ShiftSwapRequestModal({
       }
 
       // Rule: Cannot move same type (e.g., M to M, A to A, N to N)
-      if (swapMode === 'COMBINE') {
-        const hasOverlap = sourceTypes.some(s => targetTypes.includes(s));
-        if (hasOverlap) {
-          setError('ไม่สามารถย้ายเวรประเภทเดียวกันไปรวมกันได้');
-          return;
-        }
+      const hasOverlap = sourceTypes.some(s => targetTypes.includes(s));
+      if (hasOverlap) {
+        setError('ไม่สามารถย้ายเวรประเภทเดียวกันไปรวมกันได้');
+        return;
       }
 
       // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
-      const combinedTypes = swapMode === 'COMBINE' ? [...targetTypes, ...sourceTypes] : [...sourceTypes];
+      const combinedTypes = [...targetTypes, ...sourceTypes];
       const hasA = combinedTypes.includes('A');
       const hasN = combinedTypes.includes('N');
       if (hasA && hasN) {
@@ -153,7 +145,7 @@ export function ShiftSwapRequestModal({
     }
 
     // Check for A/N conflict on next day if moving A
-    if (shiftTypeToMove.includes('A')) {
+    if (requesterShift.shift_type.includes('A')) {
       const nextDay = format(addDays(new Date(targetDate), 1), 'yyyy-MM-dd');
       const targetNextShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === nextDay);
       const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -168,7 +160,7 @@ export function ShiftSwapRequestModal({
     }
     
     // Check for A/N conflict on previous day if moving N
-    if (shiftTypeToMove.includes('N')) {
+    if (requesterShift.shift_type.includes('N')) {
       const prevDay = format(addDays(new Date(targetDate), -1), 'yyyy-MM-dd');
       const targetPrevShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === prevDay);
       const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -182,6 +174,9 @@ export function ShiftSwapRequestModal({
       }
     }
 
+    // Determine which shift type to move
+    let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
+    
     setLoading(true);
     try {
       await onSendRequest({
@@ -192,7 +187,7 @@ export function ShiftSwapRequestModal({
         target_staff_id: targetStaffId,
         target_shift_id: targetShiftId.startsWith('empty-') ? null : targetShiftId,
         target_date: targetDate,
-        target_shift_type: swapMode === 'COMBINE' ? 'O' : (targetShift?.shift_type || 'O'),
+        target_shift_type: targetShift?.shift_type || 'O', // Default to 'O' for empty slots
       });
       onClose();
     } catch (err) {
@@ -227,20 +222,10 @@ export function ShiftSwapRequestModal({
   // Helper for UI display
   const getShiftTypeToDisplay = () => {
     if (!selectedRequesterShift || !selectedTargetShift) return '';
-    let type = selectedShiftType || selectedRequesterShift.shift_type;
-    
-    const types = type.split(',').map(t => t.trim()).filter(Boolean);
-    const hasM = types.includes('M');
-    const hasA = types.includes('A');
-    const hasN = types.includes('N');
-    
-    if (hasM && (hasA || hasN)) return 'ช, บ+ด';
-    if (hasA || hasN) return 'บ+ด';
-    if (hasM) return 'ช';
-    return type;
+    return selectedShiftType || selectedRequesterShift.shift_type;
   };
 
-  const isPartialDisplay = (selectedShiftType || selectedRequesterShift?.shift_type) !== selectedRequesterShift?.shift_type;
+  const isPartialDisplay = getShiftTypeToDisplay() !== selectedRequesterShift?.shift_type;
 
   // Helper to find paired shift
   const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
@@ -287,35 +272,6 @@ export function ShiftSwapRequestModal({
         )}
 
         <div className="space-y-4 mb-6">
-          {/* Swap Mode Toggle */}
-          {selectedTargetShift && !selectedTargetShift.id.startsWith('empty-') && (
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
-              <p className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">รูปแบบการย้ายเวร</p>
-              <div className="flex bg-slate-100 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setSwapMode('SWAP')}
-                  className={clsx(
-                    "flex-1 py-2 text-sm font-bold rounded-md transition-all",
-                    swapMode === 'SWAP' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  สลับเวร
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSwapMode('COMBINE')}
-                  className={clsx(
-                    "flex-1 py-2 text-sm font-bold rounded-md transition-all",
-                    swapMode === 'COMBINE' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  นำไปรวมกัน
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Summary (Always show if both are selected) */}
           {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
             <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100 shadow-sm space-y-4">
@@ -324,7 +280,7 @@ export function ShiftSwapRequestModal({
               </div>
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-1 text-center">
-                  <div className="w-auto px-3 h-10 min-w-[2.5rem] bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100 w-max">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
                     <span className="text-emerald-600 font-bold text-xs">
                       {getShiftTypeToDisplay()}
                     </span>
@@ -347,7 +303,7 @@ export function ShiftSwapRequestModal({
                   </div>
                 </div>
                 <div className="flex-1 text-center">
-                  <div className="w-auto px-3 h-10 min-w-[2.5rem] bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100 w-max">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
                     <span className="text-emerald-600 font-bold text-xs">
                       {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
                     </span>
@@ -365,11 +321,7 @@ export function ShiftSwapRequestModal({
               </div>
               <div className="bg-white/50 rounded-lg p-3 text-[10px] text-emerald-800 border border-emerald-100/50">
                 <p className="font-bold mb-1">💡 ข้อมูลการย้าย:</p>
-                {swapMode === 'COMBINE' ? (
-                  <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type} → {selectedRequesterShift.shift_type}/{selectedTargetShift.shift_type})</p>
-                ) : (
-                  <p>เวรของคุณจะถูกสลับกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว</p>
-                )}
+                <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type} → {selectedRequesterShift.shift_type}/{selectedTargetShift.shift_type})</p>
                 <p className="mt-1 text-emerald-600 font-medium">✨ สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการและวันหยุดนักขัตฤกษ์</p>
               </div>
             </div>
