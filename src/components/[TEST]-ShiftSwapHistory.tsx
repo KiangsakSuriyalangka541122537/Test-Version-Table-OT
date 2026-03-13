@@ -108,18 +108,47 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         <h3 className="font-bold text-slate-800">ประวัติการย้ายเวร (เดือน{format(currentMonth, 'MMMM', { locale: th })})</h3>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-24 gap-y-6 p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4 p-6">
         {history.length === 0 ? (
            <div className="col-span-full p-8 text-center text-slate-400 text-sm">
              ยังไม่มีประวัติการย้ายเวรในเดือนนี้
            </div>
         ) : (
           history.map((item) => (
-            <div key={item.id} className="p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div key={item.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all flex flex-col gap-3 relative overflow-hidden group">
+              {/* Status Indicator Bar */}
+              <div className={clsx(
+                "absolute left-0 top-0 bottom-0 w-1",
+                item.status === ShiftSwapStatus.APPROVED ? "bg-emerald-500" :
+                item.status === ShiftSwapStatus.REJECTED ? "bg-rose-500" :
+                item.status === ShiftSwapStatus.WAITING_TARGET ? "bg-amber-500" : "bg-indigo-500"
+              )} />
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                  <Clock className="w-3 h-3" />
+                  <span>{format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })}</span>
+                </div>
+                
+                <span className={clsx(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                  item.status === ShiftSwapStatus.APPROVED ? "bg-emerald-100 text-emerald-700" :
+                  item.status === ShiftSwapStatus.REJECTED ? "bg-rose-100 text-rose-700" :
+                  item.status === ShiftSwapStatus.WAITING_TARGET ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                )}>
+                  {item.status === ShiftSwapStatus.APPROVED ? 'สำเร็จ' :
+                   item.status === ShiftSwapStatus.REJECTED ? 'ปฏิเสธ' :
+                   item.status === ShiftSwapStatus.WAITING_TARGET ? 'รอการยืนยัน' : 'รอดำเนินการ'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm w-full">
                   {/* Requester Side */}
-                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100 flex-1 min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                      <User className="w-3 h-3 text-indigo-600" />
+                    </div>
                     <span className="font-bold text-slate-700 truncate">{getStaffName(item.requester_staff_id)}</span>
                     <span className={clsx(
                       "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
@@ -129,13 +158,18 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                     )}>
                       {getShiftLabel(item.requester_shift_type)}
                     </span>
-                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.requester_date)}</span>
+                    <span className="text-slate-500 text-[10px] shrink-0 font-medium">{formatDate(item.requester_date)}</span>
                   </div>
 
-                  <ArrowRightLeft className="w-4 h-4 text-slate-300 hidden sm:block shrink-0" />
+                  <div className="flex items-center justify-center shrink-0">
+                    <ArrowRightLeft className="w-4 h-4 text-slate-300 transform rotate-90 sm:rotate-0" />
+                  </div>
                   
                   {/* Target Side */}
-                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100 flex-1 min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                      <User className="w-3 h-3 text-slate-600" />
+                    </div>
                     <span className="font-bold text-slate-700 truncate">{getStaffName(item.target_staff_id)}</span>
                     <span className={clsx(
                       "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
@@ -145,14 +179,9 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                     )}>
                       {getShiftLabel(item.target_shift_type)}
                     </span>
-                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.target_date)}</span>
+                    <span className="text-slate-500 text-[10px] shrink-0 font-medium">{formatDate(item.target_date)}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 whitespace-nowrap ml-auto sm:ml-0 shrink-0">
-                <Clock className="w-3 h-3" />
-                <span>{format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })}</span>
               </div>
             </div>
           ))
