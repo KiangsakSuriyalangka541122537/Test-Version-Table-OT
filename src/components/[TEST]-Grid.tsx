@@ -103,6 +103,11 @@ export function Grid({
             <th scope="col" className="px-1 py-4 text-center text-[11px] font-bold text-indigo-600 uppercase tracking-tighter bg-indigo-50/30 border-l border-slate-200 w-16">
               รวมเวร
             </th>
+            {user && (
+              <th scope="col" className="px-1 py-4 text-center text-[11px] font-bold text-emerald-600 uppercase tracking-tighter bg-emerald-50/30 border-l border-slate-200 w-20">
+                รวมเงิน
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-slate-100">
@@ -231,6 +236,11 @@ export function Grid({
                 <td className="px-1 py-3 whitespace-nowrap text-center bg-indigo-50/10 border-l border-slate-100">
                   <span className="text-sm font-bold text-indigo-600">{totalShifts}</span>
                 </td>
+                {user && (
+                  <td className="px-1 py-3 whitespace-nowrap text-center bg-emerald-50/10 border-l border-slate-100">
+                    <span className="text-sm font-bold text-emerald-600">{totalPay.toLocaleString()}</span>
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -258,11 +268,30 @@ export function Grid({
                   }, 0)}
                 </span>
               </td>
+              {user && (
+                <td className="px-1 py-3 whitespace-nowrap text-center bg-emerald-100/30 border-l border-slate-200">
+                  <span className="text-sm font-black text-emerald-700">
+                    ฿{staffList.reduce((acc, staff) => {
+                      const staffShifts = shifts.filter(s => s.staff_id === staff.id);
+                      let m = 0, a = 0, n = 0;
+                      staffShifts.forEach(s => {
+                        if (s.shift_type) {
+                          const types = s.shift_type.split(',');
+                          if (types.includes('M')) m++;
+                          if (types.includes('A')) a++;
+                          if (types.includes('N')) n++;
+                        }
+                      });
+                      return acc + (m + ((a + n) / 2)) * 750;
+                    }, 0).toLocaleString()}
+                  </span>
+                </td>
+              )}
             </tr>
           )}
           {staffList.length === 0 && (
             <tr>
-              <td colSpan={daysInMonth + 2} className="px-6 py-12 text-center text-slate-400 italic">
+              <td colSpan={daysInMonth + (user ? 3 : 2)} className="px-6 py-12 text-center text-slate-400 italic">
                 ไม่พบพนักงานในระบบ
               </td>
             </tr>
