@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
 import { format, addDays } from 'date-fns';
+import { th } from 'date-fns/locale';
 import clsx from 'clsx';
 import { generateSwapOperations, validateShiftOperations } from '../lib/[TEST]-shiftOperations';
 import { SHIFT_ORDER } from '../utils/[TEST]-shiftUtils';
@@ -159,7 +160,7 @@ export function ShiftSwapRequestModal({
   };
 
   const getShiftLabel = (type: string) => {
-    if (!type) return shiftLabels['O'];
+    if (!type || type === 'O') return shiftLabels['O'];
     return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
   };
 
@@ -179,35 +180,6 @@ export function ShiftSwapRequestModal({
     };
   }
 
-  // Helper for UI display
-  const getShiftTypeToDisplay = () => {
-    if (!selectedRequesterShift || !selectedTargetShift) return '';
-    return selectedShiftType || selectedRequesterShift.shift_type;
-  };
-
-  const isPartialDisplay = getShiftTypeToDisplay() !== selectedRequesterShift?.shift_type;
-
-  // Helper to find paired shift
-  const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
-    if (!shift) return null;
-    if (shift.shift_type?.includes('A')) {
-      const nextDay = new Date(shift.date);
-      nextDay.setDate(nextDay.getDate() + 1);
-      const nextDayStr = format(nextDay, 'yyyy-MM-dd');
-      return shifts.find(s => s.staff_id === shift.staff_id && s.date === nextDayStr && s.shift_type?.includes('N'));
-    }
-    if (shift.shift_type?.includes('N')) {
-      const prevDay = new Date(shift.date);
-      prevDay.setDate(prevDay.getDate() - 1);
-      const prevDayStr = format(prevDay, 'yyyy-MM-dd');
-      return shifts.find(s => s.staff_id === shift.staff_id && s.date === prevDayStr && s.shift_type?.includes('A'));
-    }
-    return null;
-  };
-
-  const requesterPairedShift = getPairedShift(selectedRequesterShift, allShifts);
-  const targetPairedShift = getPairedShift(selectedTargetShift, allShifts);
-
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
   // Generate all days in the current month for the dropdown
@@ -225,176 +197,242 @@ export function ShiftSwapRequestModal({
   const monthDays = getDaysInMonth(currentMonth);
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
-      <div className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
+      <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg mx-auto overflow-hidden animate-in fade-in zoom-in duration-300">
+        <button 
+          onClick={onClose} 
+          className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-all z-10"
+        >
           <X className="w-6 h-6" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="mx-auto w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-            <AlertCircle className="w-6 h-6 text-indigo-600" />
+        <div className="p-8 pt-10">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+              <RefreshCw className="w-8 h-8 text-indigo-600" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">ขอย้ายเวร</h2>
+            <p className="text-slate-500 mt-1 text-sm font-medium">ยืนยันการย้ายเวรของคุณไปรวมกับคนอื่น</p>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">ขอย้ายเวร</h2>
-          <p className="text-gray-500 mt-2">ยืนยันการย้ายเวรของคุณไปรวมกับคนอื่น</p>
-        </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-4 mb-6">
-          {/* Summary (Always show if both are selected) */}
-          {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
-            <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100 shadow-sm space-y-4">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
-                <span>ยืนยันการย้ายเวร</span>
-              </div>
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">
-                      {getShiftTypeToDisplay()}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">เวรของคุณ</p>
-                  <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
-                  {isPartialDisplay ? (
-                    <p className="text-[10px] text-amber-600 mt-1 font-medium">
-                      (ย้ายเฉพาะ {getShiftTypeToDisplay()})
-                    </p>
-                  ) : requesterPairedShift && (
-                    <p className="text-[10px] text-emerald-600 mt-1">
-                      + {requesterPairedShift.shift_type} ({format(new Date(requesterPairedShift.date), 'dd/MM')})
-                    </p>
-                  )}
-                </div>
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-200">
-                    <RefreshCw className="w-4 h-4 text-white animate-spin-slow" />
-                  </div>
-                </div>
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">
-                      {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">ย้ายไปให้ {selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}</p>
-                  <p className="font-bold text-emerald-900 text-sm">
-                    {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
-                  </p>
-                  {targetPairedShift && (
-                    <p className="text-[10px] text-emerald-600 mt-1">
-                      + {targetPairedShift.shift_type} ({format(new Date(targetPairedShift.date), 'dd/MM')})
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-white/50 rounded-lg p-3 text-[10px] text-emerald-800 border border-emerald-100/50">
-                <p className="font-bold mb-1">💡 ข้อมูลการย้าย:</p>
-                <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type === 'O' ? '-' : selectedTargetShift.shift_type} → {(() => {
-                  const targetTypes = selectedTargetShift.shift_type && selectedTargetShift.shift_type !== 'O' ? selectedTargetShift.shift_type.split(',') : [];
-                  const requesterTypes = (selectedShiftType || selectedRequesterShift.shift_type).split(',');
-                  const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
-                    .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
-                  return combined.join(' | ');
-                })()})</p>
-                <p className="mt-1 text-emerald-600 font-medium">✨ สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการและวันหยุดนักขัตฤกษ์</p>
-              </div>
+          {error && (
+            <div className="bg-rose-50 text-rose-600 p-4 rounded-2xl text-sm font-bold flex items-center gap-3 mb-6 border border-rose-100 animate-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p>{error}</p>
             </div>
           )}
 
-          {/* Only show selectors if not fully pre-selected */}
-          {(!initialRequesterShift || !initialTargetShift) && (
-            <div className="space-y-4 pt-2">
-              <div className="h-px bg-slate-100 w-full"></div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">หรือเลือกกะอื่น</p>
-              
-              {/* Requester Shift Selection */}
-              <div>
-                <label htmlFor="requesterShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">กะของคุณ</label>
-                <select
-                  id="requesterShift"
-                  value={requesterShiftId}
-                  onChange={(e) => setRequesterShiftId(e.target.value)}
-                  className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
-                >
-                  <option value="">-- เลือกกะของคุณ --</option>
-                  {myShifts.map(shift => (
-                    <option key={shift.id} value={shift.id}>
-                      {getShiftLabel(shift.shift_type)} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Target Staff Selection */}
-              <div>
-                <label htmlFor="targetStaff" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">พนักงานที่ต้องการย้ายไปให้</label>
-                <select
-                  id="targetStaff"
-                  value={targetStaffId}
-                  onChange={(e) => {
-                    setTargetStaffId(e.target.value);
-                    setTargetShiftId(''); 
-                  }}
-                  className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
-                >
-                  <option value="">-- เลือกพนักงาน --</option>
-                  {allStaff.filter(s => s.id !== currentStaff.id).map(staff => (
-                    <option key={staff.id} value={staff.id}>{staff.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Target Shift Selection */}
-              {targetStaffId && (
-                <div>
-                  <label htmlFor="targetShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">เลือกวันที่/เวรของเขา</label>
-                  <select
-                    id="targetShift"
-                    value={targetShiftId}
-                    onChange={(e) => setTargetShiftId(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
-                  >
-                    <option value="">-- เลือกวันที่เป้าหมาย --</option>
-                    {monthDays.map(day => {
-                      const dateStr = format(day, 'yyyy-MM-dd');
-                      const existingShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === dateStr);
-                      const value = existingShift ? existingShift.id : `empty-${targetStaffId}-${dateStr}`;
-                      const label = existingShift 
-                        ? `${getShiftLabel(existingShift.shift_type)} (${existingShift.shift_type}) - ${format(day, 'dd/MM/yyyy')}`
-                        : `ช่องว่าง - ${format(day, 'dd/MM/yyyy')}`;
-                      
-                      return (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                  </select>
+          <div className="space-y-6">
+            {/* Summary Section */}
+            {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
+              <div className="bg-indigo-50/50 rounded-[2rem] p-6 border border-indigo-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">
+                  <RefreshCw className="w-3 h-3" />
+                  <span>ยืนยันรายละเอียดการย้ายเวร</span>
                 </div>
-              )}
-            </div>
-          )}
+                
+                <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-4">
+                  {/* Requester Side */}
+                  <div className="text-center space-y-2">
+                    <div className="relative mx-auto">
+                      <div className={clsx(
+                        "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
+                        selectedShiftType === 'M' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('M')) ? "bg-blue-500 border-blue-200 text-white" :
+                        selectedShiftType === 'A' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('A')) ? "bg-orange-500 border-orange-200 text-white" :
+                        selectedShiftType === 'N' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('N')) ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-400 border-slate-200 text-white"
+                      )}>
+                        <span className="font-black text-sm">
+                          {getShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">เวรของคุณ</p>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {format(new Date(selectedRequesterShift.date), 'd MMM', { locale: th })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md border border-indigo-100 text-indigo-600">
+                      <ArrowRightLeft className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Target Side */}
+                  <div className="text-center space-y-2">
+                    <div className="relative mx-auto">
+                      <div className={clsx(
+                        "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-md border-2 transition-all",
+                        selectedTargetShift.shift_type.includes('M') ? "bg-blue-500 border-blue-200 text-white" :
+                        selectedTargetShift.shift_type.includes('A') ? "bg-orange-500 border-orange-200 text-white" :
+                        selectedTargetShift.shift_type.includes('N') ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-100 border-slate-200 text-slate-400"
+                      )}>
+                        <span className="font-black text-sm">
+                          {selectedTargetShift.id.startsWith('empty-') || selectedTargetShift.shift_type === 'O' ? 'หยุด' : getShiftLabel(selectedTargetShift.shift_type)}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">ย้ายไปให้ {selectedTargetStaff.name.split(' ')[0]}</p>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {format(new Date(selectedTargetShift.date), 'd MMM', { locale: th })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-[11px] text-slate-600 border border-indigo-100/50 shadow-inner">
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="p-1 bg-amber-100 rounded-lg shrink-0">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 mb-0.5">สรุปการดำเนินการ:</p>
+                      <p>เวร <span className="font-bold text-indigo-600">{getShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}</span> ของคุณจะถูกนำไปรวมกับตารางของ <span className="font-bold text-slate-800">{selectedTargetStaff.name}</span></p>
+                    </div>
+                  </div>
+                  <div className="pl-7 space-y-1 text-slate-500 italic">
+                    <p>• ผลลัพธ์: {getShiftLabel(selectedTargetShift.shift_type)} → {(() => {
+                      const targetTypes = selectedTargetShift.shift_type && selectedTargetShift.shift_type !== 'O' ? selectedTargetShift.shift_type.split(',') : [];
+                      const requesterTypes = (selectedShiftType || selectedRequesterShift.shift_type).split(',');
+                      const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
+                        .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
+                      return combined.map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+                    })()}</p>
+                    <p>• สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการ</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Selectors Section */}
+            {(!initialRequesterShift || !initialTargetShift) && (
+              <div className="space-y-5 pt-2">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-slate-100"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">หรือเลือกกะที่ต้องการเปลี่ยน</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-5">
+                  {/* Requester Shift Selection */}
+                  <div className="space-y-2">
+                    <label htmlFor="requesterShift" className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                      <UserIcon className="w-3 h-3" /> กะของคุณ
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="requesterShift"
+                        value={requesterShiftId}
+                        onChange={(e) => setRequesterShiftId(e.target.value)}
+                        className="block w-full px-5 py-4 text-sm border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 rounded-2xl bg-slate-50/50 transition-all font-bold appearance-none text-slate-900"
+                      >
+                        <option value="">-- เลือกกะของคุณ --</option>
+                        {myShifts.map(shift => (
+                          <option key={shift.id} value={shift.id}>
+                            {getShiftLabel(shift.shift_type)} - {format(new Date(shift.date), 'd MMM yyyy', { locale: th })}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Target Staff Selection */}
+                  <div className="space-y-2">
+                    <label htmlFor="targetStaff" className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                      <UserIcon className="w-3 h-3" /> พนักงานที่ต้องการย้ายไปให้
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="targetStaff"
+                        value={targetStaffId}
+                        onChange={(e) => {
+                          setTargetStaffId(e.target.value);
+                          setTargetShiftId(''); 
+                        }}
+                        className="block w-full px-5 py-4 text-sm border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 rounded-2xl bg-slate-50/50 transition-all font-bold appearance-none text-slate-900"
+                      >
+                        <option value="">-- เลือกพนักงาน --</option>
+                        {allStaff.filter(s => s.id !== currentStaff.id).map(staff => (
+                          <option key={staff.id} value={staff.id}>{staff.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                        <UserIcon className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Target Shift Selection */}
+                  {targetStaffId && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <label htmlFor="targetShift" className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                        <Calendar className="w-3 h-3" /> เลือกวันที่/เวรของเขา
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="targetShift"
+                          value={targetShiftId}
+                          onChange={(e) => setTargetShiftId(e.target.value)}
+                          className="block w-full px-5 py-4 text-sm border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 rounded-2xl bg-slate-50/50 transition-all font-bold appearance-none text-slate-900"
+                        >
+                          <option value="">-- เลือกวันที่เป้าหมาย --</option>
+                          {monthDays.map(day => {
+                            const dateStr = format(day, 'yyyy-MM-dd');
+                            const existingShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === dateStr);
+                            const value = existingShift ? existingShift.id : `empty-${targetStaffId}-${dateStr}`;
+                            const label = existingShift 
+                              ? `${getShiftLabel(existingShift.shift_type)} - ${format(day, 'd MMM yyyy', { locale: th })}`
+                              : `หยุด - ${format(day, 'd MMM yyyy', { locale: th })}`;
+                            
+                            return (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex justify-end space-x-3">
+        <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex gap-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="flex-1 px-6 py-4 border border-slate-200 rounded-2xl text-sm font-black text-slate-600 bg-white hover:bg-slate-100 transition-all active:scale-95"
           >
             ยกเลิก
           </button>
           <button
             onClick={handleSendRequest}
             disabled={loading || !requesterShiftId || !targetStaffId || !targetShiftId}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-[2] px-6 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? 'กำลังส่งคำขอ...' : 'ส่งคำขอย้ายเวร'}
+            {loading ? (
+              <>
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                <span>กำลังส่งคำขอ...</span>
+              </>
+            ) : (
+              <span>ส่งคำขอย้ายเวร</span>
+            )}
           </button>
         </div>
       </div>
