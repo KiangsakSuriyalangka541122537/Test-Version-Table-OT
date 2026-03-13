@@ -164,6 +164,15 @@ export function ShiftSwapRequestModal({
     return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
   };
 
+  const getSummaryShiftLabel = (type: string) => {
+    if (!type || type === 'O') return 'หยุด';
+    const types = type.split(',').map(t => t.trim());
+    if (types.includes('A') || types.includes('N')) {
+      return 'บ่าย + ดึก';
+    }
+    return types.map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+  };
+
   const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
 
   let selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
@@ -233,8 +242,11 @@ export function ShiftSwapRequestModal({
                         selectedShiftType === 'A' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('A')) ? "bg-orange-500 border-orange-200 text-white" :
                         selectedShiftType === 'N' || (!selectedShiftType && selectedRequesterShift.shift_type.includes('N')) ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-400 border-slate-200 text-white"
                       )}>
-                        <span className="font-black text-sm">
-                          {getShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}
+                        <span className={clsx(
+                          "font-black text-center leading-tight",
+                          (selectedShiftType || selectedRequesterShift.shift_type).includes('A') || (selectedShiftType || selectedRequesterShift.shift_type).includes('N') ? "text-[10px]" : "text-sm"
+                        )}>
+                          {getSummaryShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}
                         </span>
                       </div>
                     </div>
@@ -262,8 +274,11 @@ export function ShiftSwapRequestModal({
                         selectedTargetShift.shift_type.includes('A') ? "bg-orange-500 border-orange-200 text-white" :
                         selectedTargetShift.shift_type.includes('N') ? "bg-purple-500 border-purple-200 text-white" : "bg-slate-100 border-slate-200 text-slate-400"
                       )}>
-                        <span className="font-black text-sm">
-                          {selectedTargetShift.id.startsWith('empty-') || selectedTargetShift.shift_type === 'O' ? 'หยุด' : getShiftLabel(selectedTargetShift.shift_type)}
+                        <span className={clsx(
+                          "font-black text-center leading-tight",
+                          selectedTargetShift.shift_type.includes('A') || selectedTargetShift.shift_type.includes('N') ? "text-[10px]" : "text-sm"
+                        )}>
+                          {getSummaryShiftLabel(selectedTargetShift.shift_type)}
                         </span>
                       </div>
                     </div>
@@ -283,7 +298,7 @@ export function ShiftSwapRequestModal({
                     </div>
                     <div>
                       <p className="font-bold text-slate-800 mb-0.5">สรุปการดำเนินการ:</p>
-                      <p>เวร <span className="font-bold text-indigo-600">{getShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}</span> ของคุณจะถูกนำไปรวมกับตารางของ <span className="font-bold text-slate-800">{selectedTargetStaff.name}</span></p>
+                      <p>เวร <span className="font-bold text-indigo-600">{getSummaryShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}</span> ของคุณจะถูกนำไปรวมกับตารางของ <span className="font-bold text-slate-800">{selectedTargetStaff.name}</span></p>
                     </div>
                   </div>
                 </div>
