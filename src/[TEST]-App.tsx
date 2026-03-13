@@ -280,9 +280,9 @@ export default function App() {
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Sending swap request:', request);
-      const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
+      const initialStatus = (request.target_staff_id) 
         ? ShiftSwapStatus.WAITING_TARGET 
-        : ShiftSwapStatus.PENDING;
+        : ShiftSwapStatus.APPROVED;
       
       const { error } = await supabase.from('test_shift_swap_requests').insert({
         ...request,
@@ -303,7 +303,7 @@ export default function App() {
 
       alert(initialStatus === ShiftSwapStatus.WAITING_TARGET 
         ? 'ส่งคำขอสลับเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
-        : 'ส่งคำขอสลับเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
+        : 'ส่งคำขอสลับเวรแล้ว');
       
       setShiftToSwap(null);
       setSelectedShiftType(null);

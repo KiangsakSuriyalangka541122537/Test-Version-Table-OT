@@ -39,7 +39,6 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       const { data, error } = await supabase
         .from('test_shift_swap_requests')
         .select('*')
-        .eq('status', ShiftSwapStatus.APPROVED)
         .order('updated_at', { ascending: false })
         .limit(20);
 
