@@ -55,28 +55,51 @@ export function ShiftTypeSelectionModal({
           </div>
 
           <div className="space-y-3">
-            {shiftTypes.map((type) => (
+            {/* Option 1: Move Morning Shift (M) if exists */}
+            {shiftTypes.includes('M') && (
               <button
-                key={type}
-                onClick={() => onSelect(type)}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${shiftColors[type] || 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'}`}
+                onClick={() => onSelect('M')}
+                className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${shiftColors['M']}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-black">{type}</span>
-                  <span className="font-bold text-sm">{shiftLabels[type] || type}</span>
+                  <span className="text-lg font-black">M</span>
+                  <span className="font-bold text-sm">ย้ายเวรเช้า (ช)</span>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-white transition-colors">
                   <div className="w-2 h-2 rounded-full bg-current"></div>
                 </div>
               </button>
-            ))}
-            
-            <button
-              onClick={() => onSelect(shiftTypes.join(',') as ShiftType)}
-              className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-500 hover:bg-slate-50 transition-all font-bold text-sm"
-            >
-              <span>ย้ายทั้งคู่ ({shiftTypes.join('|')})</span>
-            </button>
+            )}
+
+            {/* Option 2: Move the rest (A, N, or A+N) */}
+            {(() => {
+              const others = shiftTypes.filter(t => t !== 'M');
+              if (others.length === 0) return null;
+              
+              const combinedType = others.join(',') as ShiftType;
+              const label = others.length > 1 
+                ? 'ย้ายเวร บ+ด' 
+                : `ย้ายเวร${others[0] === 'A' ? 'บ่าย (บ)' : 'ดึก (ด)'}`;
+              
+              const colorClass = others.length > 1 
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+                : (shiftColors[others[0]] || 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100');
+
+              return (
+                <button
+                  onClick={() => onSelect(combinedType)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${colorClass}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-black">{others.join('|')}</span>
+                    <span className="font-bold text-sm">{label}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-white transition-colors">
+                    <div className="w-2 h-2 rounded-full bg-current"></div>
+                  </div>
+                </button>
+              );
+            })()}
           </div>
         </div>
         
