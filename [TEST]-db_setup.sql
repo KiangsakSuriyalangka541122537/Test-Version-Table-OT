@@ -65,11 +65,11 @@ END $$;
 CREATE TABLE public.test_shift_swap_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     requester_staff_id UUID REFERENCES public.test_staff(id) ON DELETE CASCADE NOT NULL,
-    requester_shift_id UUID REFERENCES public.test_shifts(id) ON DELETE CASCADE,
+    requester_shift_id UUID REFERENCES public.test_shifts(id) ON DELETE SET NULL,
     requester_date DATE NOT NULL,
     requester_shift_type TEXT NOT NULL,
     target_staff_id UUID REFERENCES public.test_staff(id) ON DELETE CASCADE NOT NULL,
-    target_shift_id UUID REFERENCES public.test_shifts(id) ON DELETE CASCADE,
+    target_shift_id UUID REFERENCES public.test_shifts(id) ON DELETE SET NULL,
     target_date DATE NOT NULL,
     target_shift_type TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending', -- Using TEXT for simplicity with the enum values
