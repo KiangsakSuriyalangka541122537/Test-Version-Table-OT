@@ -208,9 +208,6 @@ export function ShiftSwapRequestModal({
 
         <div className="p-8 pt-10">
           <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-              <RefreshCw className="w-8 h-8 text-indigo-600" />
-            </div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">ขอย้ายเวร</h2>
             <p className="text-slate-500 mt-1 text-sm font-medium">ยืนยันการย้ายเวรของคุณไปรวมกับคนอื่น</p>
           </div>
@@ -226,11 +223,6 @@ export function ShiftSwapRequestModal({
             {/* Summary Section */}
             {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
               <div className="bg-indigo-50/50 rounded-[2rem] p-6 border border-indigo-100 shadow-sm space-y-6">
-                <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">
-                  <RefreshCw className="w-3 h-3" />
-                  <span>ยืนยันรายละเอียดการย้ายเวร</span>
-                </div>
-                
                 <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-4">
                   {/* Requester Side */}
                   <div className="text-center space-y-2">
@@ -293,16 +285,6 @@ export function ShiftSwapRequestModal({
                       <p className="font-bold text-slate-800 mb-0.5">สรุปการดำเนินการ:</p>
                       <p>เวร <span className="font-bold text-indigo-600">{getShiftLabel(selectedShiftType || selectedRequesterShift.shift_type)}</span> ของคุณจะถูกนำไปรวมกับตารางของ <span className="font-bold text-slate-800">{selectedTargetStaff.name}</span></p>
                     </div>
-                  </div>
-                  <div className="pl-7 space-y-1 text-slate-500 italic">
-                    <p>• ผลลัพธ์: {getShiftLabel(selectedTargetShift.shift_type)} → {(() => {
-                      const targetTypes = selectedTargetShift.shift_type && selectedTargetShift.shift_type !== 'O' ? selectedTargetShift.shift_type.split(',') : [];
-                      const requesterTypes = (selectedShiftType || selectedRequesterShift.shift_type).split(',');
-                      const combined = Array.from(new Set([...targetTypes, ...requesterTypes]))
-                        .sort((a, b) => (SHIFT_ORDER[a] || 99) - (SHIFT_ORDER[b] || 99));
-                      return combined.map(t => shiftLabels[t as ShiftType] || t).join(' + ');
-                    })()}</p>
-                    <p>• สามารถย้ายเวรได้ทุกวัน รวมถึงวันหยุดราชการ</p>
                   </div>
                 </div>
               </div>
