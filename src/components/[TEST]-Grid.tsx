@@ -212,20 +212,10 @@ export function Grid({
                               return (
                                 <React.Fragment key={`${dateStr}-${idx}`}>
                                   <span 
-                                    onClick={(e) => {
-                                      if (user && !isAdmin) {
-                                        e.stopPropagation();
-                                        const staffObj = staffList.find(s => s.id === staff.id);
-                                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
-                                        if (staffObj) {
-                                          onShiftSwapRequest(staffObj, dateStr, shiftObj, shiftType);
-                                        }
-                                      }
-                                    }}
                                     className={clsx(
                                       "font-bold text-sm px-0.5 rounded transition-all", 
                                       shiftColors[shiftType],
-                                      isThisTypeSelected ? "bg-yellow-400 text-yellow-900 shadow-sm scale-110" : "hover:bg-slate-100"
+                                      isThisTypeSelected ? "bg-yellow-400 text-yellow-900 shadow-sm scale-110" : ""
                                     )}
                                   >
                                     {shiftLabels[shiftType]}
