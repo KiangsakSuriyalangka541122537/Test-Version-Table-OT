@@ -39,11 +39,19 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
       }
       
       console.log('Total records fetched:', data?.length);
+      
+      if (data && data.length > 0) {
+        console.log('Sample record:', {
+          id: data[0].id,
+          status: data[0].status,
+          requester_date: data[0].requester_date,
+          target_date: data[0].target_date,
+          updated_at: data[0].updated_at,
+          created_at: data[0].created_at
+        });
+      }
 
       // Filter to show swaps relevant to the current month view
-      // We show swaps where:
-      // 1. Either the requester date or target date is in the current month
-      // 2. OR the action (updated_at or created_at) was performed in the current month
       const currentMonthStr = format(currentMonth, 'yyyy-MM');
       const filtered = (data || []).filter(item => {
         const isShiftInMonth = (item.requester_date && item.requester_date.startsWith(currentMonthStr)) || 
@@ -52,7 +60,11 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         const actionDate = new Date(item.updated_at || item.created_at);
         const isActionInMonth = isValid(actionDate) && format(actionDate, 'yyyy-MM') === currentMonthStr;
         
-        return isShiftInMonth || isActionInMonth;
+        const keep = isShiftInMonth || isActionInMonth;
+        
+        console.log(`Record ${item.id}: status=${item.status}, requester_date=${item.requester_date}, target_date=${item.target_date}, updated_at=${item.updated_at}, isShiftInMonth=${isShiftInMonth}, isActionInMonth=${isActionInMonth}, keep=${keep}`);
+        
+        return keep;
       });
 
       // Sort by updated_at (or created_at if updated_at is null)
