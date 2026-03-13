@@ -302,7 +302,7 @@ export default function App() {
       console.log('Is different staff:', isDifferentStaff);
       
       const initialStatus = isDifferentStaff 
-        ? ShiftSwapStatus.WAITING_TARGET 
+        ? ShiftSwapStatus.PENDING 
         : ShiftSwapStatus.PENDING;
       
       console.log('Initial status:', initialStatus);
