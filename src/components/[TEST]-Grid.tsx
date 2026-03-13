@@ -74,8 +74,11 @@ export function Grid({
               รายชื่อบุคลากร
             </th>
             {days.map((day) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
               const isWknd = isWeekend(day);
               const isTdy = isToday(day);
+              const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr) || (targetShiftToSwap?.date === dateStr);
+              
               return (
                 <th
                   key={day.toISOString()}
@@ -83,7 +86,8 @@ export function Grid({
                   className={clsx(
                     "px-0.5 py-2 text-center text-[9px] font-bold uppercase tracking-tighter border-r border-slate-200 transition-colors",
                     isWknd ? "bg-rose-50/50 text-rose-600" : "text-slate-400",
-                    isTdy && "bg-indigo-50/50 text-indigo-600"
+                    isTdy && "bg-indigo-50/50 text-indigo-600",
+                    isColHighlighted && "!bg-yellow-100/50 text-yellow-700"
                   )}
                 >
                   <div className="flex flex-col items-center gap-0">
@@ -125,7 +129,10 @@ export function Grid({
 
             return (
               <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 bg-white z-10 border-r border-slate-200 group-hover:bg-slate-50 transition-colors overflow-hidden text-ellipsis">
+                <td className={clsx(
+                  "px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 z-10 border-r border-slate-200 transition-colors overflow-hidden text-ellipsis",
+                  (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id || targetShiftToSwap?.staff_id === staff.id) ? "!bg-yellow-100" : "bg-white group-hover:bg-slate-50"
+                )}>
                   <div className="flex items-center gap-2">
                     <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center border transition-all ${
                       staff.name.startsWith('นาย') 
@@ -149,6 +156,11 @@ export function Grid({
                   const currentShift = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
                   const isSelectedTarget = targetShiftToSwap?.id === (currentShift?.id || `empty-${staff.id}-${dateStr}`);
 
+                  // Crosshair highlighting logic
+                  const isRowHighlighted = (selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id) || (targetShiftToSwap?.staff_id === staff.id);
+                  const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr) || (targetShiftToSwap?.date === dateStr);
+                  const isCrosshair = isRowHighlighted || isColHighlighted;
+
                   // Check for pending swaps
                   const pendingSwap = pendingSwaps.find(s => 
                     (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
@@ -170,10 +182,47 @@ export function Grid({
                     )
                   );
 
-                    return (
-                      <td
-                        key={dateStr}
-                        onClick={() => {
+                  return (
+                    <td
+                      key={dateStr}
+                      onMouseEnter={() => {
+                        const findChain = (sId: string, dStr: string) => {
+                          const visitedSwaps = new Set<string>();
+                          const visitedNodes = new Set<string>();
+                          const queue: { sId: string; dStr: string }[] = [{ sId, dStr }];
+                          visitedNodes.add(`${sId}_${dStr}`);
+
+                          while (queue.length > 0) {
+                            const current = queue.shift()!;
+                            approvedSwaps.forEach(s => {
+                              if (visitedSwaps.has(s.id)) return;
+
+                              const isRequester = s.requester_staff_id === current.sId && s.requester_date === current.dStr;
+                              const isTarget = s.target_staff_id === current.sId && s.target_date === current.dStr;
+
+                              if (isRequester || isTarget) {
+                                visitedSwaps.add(s.id);
+                                const otherStaffId = isRequester ? s.target_staff_id : s.requester_staff_id;
+                                const otherDate = isRequester ? s.target_date : s.requester_date;
+                                const otherKey = `${otherStaffId}_${otherDate}`;
+
+                                if (!visitedNodes.has(otherKey)) {
+                                  visitedNodes.add(otherKey);
+                                  queue.push({ sId: otherStaffId, dStr: otherDate });
+                                }
+                              }
+                            });
+                          }
+                          return Array.from(visitedSwaps);
+                        };
+
+                        const chainIds = findChain(staff.id, dateStr);
+                        if (chainIds.length > 0) {
+                          setHoveredSwapIds(chainIds);
+                        }
+                      }}
+                      onMouseLeave={() => setHoveredSwapIds([])}
+                      onClick={() => {
                           const staffObj = staffList.find(s => s.id === staff.id);
                           const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
                           
@@ -187,11 +236,17 @@ export function Grid({
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
-                          (isSelectedForMove || isSelectedRequester) && "bg-yellow-400! z-10",
-                          isSelectedTarget && "bg-yellow-200! z-10",
+                          isCrosshair && "bg-yellow-50/40",
+                          isHoveredSwap && "!bg-yellow-400/80 z-20 ring-2 ring-yellow-600 ring-inset shadow-lg",
+                          isPendingSwap && "bg-amber-50/60 !border-l-2 !border-l-amber-400",
+                          (isSelectedForMove || isSelectedRequester) && "!bg-yellow-500 z-10",
+                          isSelectedTarget && "!bg-yellow-300 z-10",
                         )}
                       >
                         <div className="flex items-center justify-center gap-0.5 min-h-[24px]">
+                          {approvedSwap && !isHoveredSwap && (
+                            <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-yellow-400 rounded-bl-sm opacity-60" />
+                          )}
                           {currentShifts.length > 0 ? (
                             currentShifts.map((shiftType, idx) => {
                               const isThisTypeSelected = isSelectedRequester && selectedShiftType === shiftType;

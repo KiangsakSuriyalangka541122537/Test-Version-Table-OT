@@ -88,10 +88,33 @@ export function ShiftSwapRequestModal({
       return;
     }
 
+    // Determine which shift type to move
+    let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
+    const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+    
+    if (!selectedShiftType && types.length > 1) {
+      const hasM = types.includes('M');
+      const hasA = types.includes('A');
+      const hasN = types.includes('N');
+      
+      if (hasM && (hasA || hasN)) {
+        // User specifically requested: if M is paired with A or N, ONLY move M
+        shiftTypeToMove = 'M';
+      } else if (targetShiftId.startsWith('empty-')) {
+        // If moving to an empty slot and it's a double shift (e.g., A|N - though A|N is forbidden on same day)
+        // we keep them together if they are A or N to maintain pairing logic
+        if (hasA || hasN) {
+          shiftTypeToMove = requesterShift.shift_type;
+        } else {
+          shiftTypeToMove = types[0];
+        }
+      }
+    }
+
     // Validation logic
     if (targetShift) {
       const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      const sourceTypes = requesterShift.shift_type ? requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const sourceTypes = shiftTypeToMove.split(',').map(t => t.trim()).filter(Boolean);
 
       // Rule: No more than 2 shifts
       if (targetTypes.length + sourceTypes.length > 2) {
@@ -145,7 +168,7 @@ export function ShiftSwapRequestModal({
     }
 
     // Check for A/N conflict on next day if moving A
-    if (requesterShift.shift_type.includes('A')) {
+    if (shiftTypeToMove.includes('A')) {
       const nextDay = format(addDays(new Date(targetDate), 1), 'yyyy-MM-dd');
       const targetNextShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === nextDay);
       const targetNextTypes = targetNextShift && targetNextShift.shift_type ? targetNextShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -160,7 +183,7 @@ export function ShiftSwapRequestModal({
     }
     
     // Check for A/N conflict on previous day if moving N
-    if (requesterShift.shift_type.includes('N')) {
+    if (shiftTypeToMove.includes('N')) {
       const prevDay = format(addDays(new Date(targetDate), -1), 'yyyy-MM-dd');
       const targetPrevShift = allShifts.find(s => s.staff_id === targetStaffId && s.date === prevDay);
       const targetPrevTypes = targetPrevShift && targetPrevShift.shift_type ? targetPrevShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -171,29 +194,6 @@ export function ShiftSwapRequestModal({
       if (targetPrevTypes.length >= 2 && !targetPrevTypes.includes('A')) {
         setError('ไม่สามารถย้ายได้เนื่องจากจะทำให้วันก่อนหน้าของพนักงานปลายทางมีเวรเกิน 2 เวร');
         return;
-      }
-    }
-
-    // Determine which shift type to move
-    let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
-    const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
-    
-    if (!selectedShiftType && types.length > 1) {
-      const hasM = types.includes('M');
-      const hasA = types.includes('A');
-      const hasN = types.includes('N');
-      
-      if (hasM && (hasA || hasN)) {
-        // User specifically requested: if M is paired with A or N, ONLY move M
-        shiftTypeToMove = 'M';
-      } else if (targetShiftId.startsWith('empty-')) {
-        // If moving to an empty slot and it's a double shift (e.g., A|N - though A|N is forbidden on same day)
-        // we keep them together if they are A or N to maintain pairing logic
-        if (hasA || hasN) {
-          shiftTypeToMove = requesterShift.shift_type;
-        } else {
-          shiftTypeToMove = types[0];
-        }
       }
     }
 
