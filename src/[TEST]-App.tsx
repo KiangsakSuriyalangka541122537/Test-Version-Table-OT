@@ -339,9 +339,9 @@ export default function App() {
       setSelectedShiftType(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending swap request:', error);
-      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
+      alert(`เกิดข้อผิดพลาดในการส่งคำขอสลับเวร: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -390,14 +390,6 @@ export default function App() {
           if ((newShiftType === 'A' && currentTypes.includes('N')) || (newShiftType === 'N' && currentTypes.includes('A'))) {
             alert('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
             return;
-          }
-
-          // Special Rule: If cell has M and N, only allow moving M
-          if (currentTypes.includes('M') && currentTypes.includes('N')) {
-            if (newShiftType !== 'M') {
-              alert('ในช่องที่มีเวรเช้า (ช) และเวรดึก (ด) คุณสามารถย้ายได้เฉพาะเวรเช้า (ช) เท่านั้น');
-              return;
-            }
           }
           
           // Rule: Max 2 shifts per day
