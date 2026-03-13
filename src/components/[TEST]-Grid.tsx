@@ -30,9 +30,9 @@ const shiftColors: Record<ShiftType, string> = {
 };
 
 const shiftLabels: Record<ShiftType, string> = {
-  M: 'เช้า',
-  A: 'บ่าย',
-  N: 'ดึก',
+  M: 'ช',
+  A: 'บ',
+  N: 'ด',
   O: 'หยุด',
 };
 
