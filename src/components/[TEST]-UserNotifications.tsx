@@ -23,8 +23,6 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/[TEST]-shiftOperations';
-
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,26 +94,11 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const handleAccept = async (request: ShiftSwapRequest) => {
     setLoading(true);
     try {
-      // 1. Generate and apply shift operations immediately
-      const types = request.requester_shift_type.split(',');
-      const allOperations: ShiftOperation[] = [];
-      for (const type of types) {
-        const operations = generateMoveOperations(
-          request.requester_staff_id,
-          request.requester_date,
-          request.target_staff_id,
-          request.target_date,
-          type.trim() as ShiftType
-        );
-        allOperations.push(...operations);
-      }
-      await applyShiftOperations(allOperations);
-
-      // 2. Update request status to APPROVED
+      // Update request status to PENDING (waiting for admin)
       const { error } = await supabase
         .from('test_shift_swap_requests')
         .update({ 
-          status: ShiftSwapStatus.APPROVED, 
+          status: ShiftSwapStatus.PENDING, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', request.id);
@@ -123,11 +106,11 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (error) throw error;
 
       await supabase.from('test_logs').insert({
-        message: `Staff ${user.name} accepted move request ${request.id}. Shifts updated immediately.`,
-        action_type: 'SHIFT_MOVE_COMPLETED'
+        message: `Staff ${user.name} accepted move request ${request.id}. Waiting for admin approval.`,
+        action_type: 'SHIFT_MOVE_ACCEPTED_BY_TARGET'
       });
 
-      alert('ยืนยันการรับเวรเรียบร้อยแล้ว ตารางเวรถูกอัปเดตทันที');
+      alert('ยืนยันการรับเวรเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
       fetchUserRequests();
       onUpdate(); // Refresh the main grid
       setIsOpen(false);

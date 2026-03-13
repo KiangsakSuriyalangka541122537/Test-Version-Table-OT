@@ -56,7 +56,13 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      // 1. Apply shift changes
+      // 1. Break link to shifts to avoid cascade delete
+      await supabase.from('test_shift_swap_requests').update({ 
+        requester_shift_id: null,
+        target_shift_id: null
+      }).eq('id', request.id);
+
+      // 2. Apply shift changes
       const types = request.requester_shift_type.split(',').map(t => t.trim()).filter(Boolean);
       
       // Check for A/N conflict in target cell
