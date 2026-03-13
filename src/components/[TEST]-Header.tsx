@@ -1,7 +1,7 @@
 import React from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Download, LogIn, LogOut, Settings, BarChart2, FileText, FileSpreadsheet, ArrowRightLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, LogIn, LogOut, Settings, BarChart2, FileText, FileSpreadsheet, ArrowRightLeft, HelpCircle } from 'lucide-react';
 import { User, Staff, Shift } from '../types';
 import { UserNotifications } from './[TEST]-UserNotifications';
 
@@ -22,6 +22,7 @@ interface HeaderProps {
   allShifts: Shift[];
   onUpdate: () => void;
   onHistoryClick: () => void;
+  onHelpClick: () => void;
 }
 
 export function Header({
@@ -40,7 +41,8 @@ export function Header({
   allStaff,
   allShifts,
   onUpdate,
-  onHistoryClick
+  onHistoryClick,
+  onHelpClick
 }: HeaderProps) {
   const isAdmin = user?.role === 'admin' && user?.username === 'kik';
 
@@ -83,6 +85,15 @@ export function Header({
               >
                 <BarChart2 className="w-4 h-4 transition-transform group-hover:scale-110" />
                 <span className="text-xs font-medium">สถิติ</span>
+              </button>
+
+              <button 
+                onClick={onHelpClick} 
+                className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all group" 
+                title="วิธีใช้งาน"
+              >
+                <HelpCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
+                <span className="text-xs font-medium">วิธีใช้งาน</span>
               </button>
               
               <div className="w-px h-6 bg-slate-100 mx-1"></div>

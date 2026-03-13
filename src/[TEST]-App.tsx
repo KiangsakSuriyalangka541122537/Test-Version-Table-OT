@@ -14,7 +14,8 @@ import { ShiftSwapRequestModal } from './components/[TEST]-ShiftSwapRequestModal
 import { ShiftSwapHistory } from './components/[TEST]-ShiftSwapHistory';
 import { ShiftTypeSelectionModal } from './components/[TEST]-ShiftTypeSelectionModal';
 import { ExportPDFTemplate } from './components/[TEST]-ExportPDFTemplate';
-import { RefreshCw } from 'lucide-react';
+import { HelpModal } from './components/HelpModal';
+import { RefreshCw, HelpCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -42,6 +43,7 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   
   // Shift Swap Request Modal state
   const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
@@ -651,6 +653,7 @@ export default function App() {
         onExportExcel={handleExportExcel}
         onAdminClick={() => setIsAdminOpen(true)}
         onStatsClick={() => setIsStatsOpen(true)}
+        onHelpClick={() => setIsHelpOpen(true)}
         onHistoryClick={scrollToHistory}
         isPublished={rosterStatus?.is_published || false}
         onPublishToggle={handlePublishToggle}
@@ -804,7 +807,21 @@ export default function App() {
         )}
       </main>
 
+      {/* Floating Help Button for Mobile */}
+      <button
+        onClick={() => setIsHelpOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 w-12 h-12 bg-white shadow-lg border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-all active:scale-90 z-40"
+        title="วิธีใช้งาน"
+      >
+        <HelpCircle className="w-6 h-6" />
+      </button>
+
       {/* Modals */}
+      <HelpModal 
+        isOpen={isHelpOpen} 
+        onClose={() => setIsHelpOpen(false)} 
+      />
+
       <LoginModal
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
