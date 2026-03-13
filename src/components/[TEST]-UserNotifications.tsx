@@ -97,12 +97,9 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     setLoading(true);
     try {
       // 1. Generate and apply shift operations immediately
+      const types = request.requester_shift_type.split(',');
       const allOperations: ShiftOperation[] = [];
-      
-      // Move requester's shift to target
-      const requesterTypes = request.requester_shift_type ? request.requester_shift_type.split(',') : [];
-      for (const type of requesterTypes) {
-        if (!type.trim() || type.trim() === 'O') continue;
+      for (const type of types) {
         const operations = generateMoveOperations(
           request.requester_staff_id,
           request.requester_date,
@@ -112,23 +109,6 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         );
         allOperations.push(...operations);
       }
-
-      // If it's a swap (target has a shift), move target's shift to requester
-      if (request.target_shift_type && request.target_shift_type !== 'O') {
-        const targetTypes = request.target_shift_type.split(',');
-        for (const type of targetTypes) {
-          if (!type.trim() || type.trim() === 'O') continue;
-          const operations = generateMoveOperations(
-            request.target_staff_id,
-            request.target_date,
-            request.requester_staff_id,
-            request.requester_date,
-            type.trim() as ShiftType
-          );
-          allOperations.push(...operations);
-        }
-      }
-
       await applyShiftOperations(allOperations);
 
       // 2. Update request status to APPROVED
