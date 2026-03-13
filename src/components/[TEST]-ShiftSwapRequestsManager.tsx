@@ -37,7 +37,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('test_shift_swap_requests')
+        .from('shift_swap_requests')
         .select('*')
         .in('status', [ShiftSwapStatus.PENDING, ShiftSwapStatus.WAITING_TARGET])
         .order('created_at', { ascending: true });
@@ -149,7 +149,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       await applyShiftOperations(allOperations);
 
       // 2. Update request status
-      const { error: updateError } = await supabase.from('test_shift_swap_requests').update({ 
+      const { error: updateError } = await supabase.from('shift_swap_requests').update({ 
         status: ShiftSwapStatus.APPROVED, 
         updated_at: new Date().toISOString() 
       }).eq('id', request.id);
@@ -177,7 +177,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.REJECTED, updated_at: new Date().toISOString() }).eq('id', request.id);
+      await supabase.from('shift_swap_requests').update({ status: ShiftSwapStatus.REJECTED, updated_at: new Date().toISOString() }).eq('id', request.id);
 
       await supabase.from('test_logs').insert({
         message: `Admin rejected swap request ${request.id} between ${request.requester_staff_id} and ${request.target_staff_id}`,

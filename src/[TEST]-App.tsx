@@ -317,7 +317,7 @@ export default function App() {
       
       console.log('Payload to insert:', payload);
 
-      const { data, error } = await supabase.from('test_shift_swap_requests').insert(payload).select();
+      const { data, error } = await supabase.from('shift_swap_requests').insert(payload).select();
       
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));
