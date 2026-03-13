@@ -13,17 +13,12 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
     {
       icon: <LogIn className="w-5 h-5 text-indigo-500" />,
       title: 'เข้าสู่ระบบ',
-      desc: 'ใช้บัญชี Google เพื่อเริ่มใช้งาน'
+      desc: 'ใช้บัญชีของคุณเพื่อเริ่มใช้งาน'
     },
     {
       icon: <Calendar className="w-5 h-5 text-blue-500" />,
       title: 'ดูตารางเวร',
       desc: 'เช้า (น้ำเงิน) | บ่าย (ส้ม) | ดึก (ม่วง) | หยุด (เทา)'
-    },
-    {
-      icon: <Info className="w-5 h-5 text-emerald-500" />,
-      title: 'จัดการเวรตัวเอง',
-      desc: 'คลิกที่ช่องวันที่เพื่อ เพิ่ม/แก้ไข/ลบ เวรของคุณ'
     },
     {
       icon: <RefreshCw className="w-5 h-5 text-orange-500" />,
