@@ -197,9 +197,19 @@ export default function App() {
   };
 
   const handleShiftSwapRequest = (staff: Staff, dateStr: string, shift: Shift | null, specificType?: ShiftType) => {
+    // Find staff ID of current user
+    const currentUserStaff = staffList.find(s => s.name === user?.name);
+    const currentUserStaffId = currentUserStaff?.id;
+
     if (!shift) {
       // If clicking an empty cell, treat as target
       if (shiftToSwap) {
+        // Restriction: One of them must be ME (unless admin)
+        if (!isAdmin && shiftToSwap.staff_id !== currentUserStaffId && staff.id !== currentUserStaffId) {
+          alert('คุณสามารถย้ายเวรที่เกี่ยวข้องกับตนเองเท่านั้น');
+          return;
+        }
+
         setTargetShiftToSwap({
           id: `empty-${staff.id}-${dateStr}`,
           staff_id: staff.id,
@@ -231,6 +241,12 @@ export default function App() {
         setSelectedShiftType(null);
         setRequesterStaff(null);
       } else {
+        // Restriction: One of them must be ME (unless admin)
+        if (!isAdmin && shiftToSwap.staff_id !== currentUserStaffId && staff.id !== currentUserStaffId) {
+          alert('คุณสามารถย้ายเวรที่เกี่ยวข้องกับตนเองเท่านั้น (ย้ายเวรตนเองไปให้คนอื่น หรือขอย้ายเวรคนอื่นมาให้ตนเอง)');
+          return;
+        }
+
         setTargetShiftToSwap(shift);
       }
     }
