@@ -11,7 +11,6 @@ import { ShiftEditModal } from './components/[TEST]-ShiftEditModal';
 import { StatsModal } from './components/[TEST]-StatsModal';
 import { AdminManager } from './components/[TEST]-AdminManager';
 import { ShiftSwapRequestModal } from './components/[TEST]-ShiftSwapRequestModal';
-import { ShiftSelectionModal } from './components/[TEST]-ShiftSelectionModal';
 import { ShiftSwapHistory } from './components/[TEST]-ShiftSwapHistory';
 import { ExportPDFTemplate } from './components/[TEST]-ExportPDFTemplate';
 import { RefreshCw } from 'lucide-react';
@@ -45,12 +44,6 @@ export default function App() {
   
   // Shift Swap Request Modal state
   const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
-  const [shiftSelectionModal, setShiftSelectionModal] = useState<{
-    staff: Staff;
-    dateStr: string;
-    shift: Shift;
-    shiftTypes: ShiftType[];
-  } | null>(null);
   const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
@@ -214,13 +207,6 @@ export default function App() {
 
     if (!shiftToSwap) {
       // Select source
-      const types = shift.shift_type.split(',').map(t => t.trim() as ShiftType).filter(Boolean);
-      if (!specificType && types.length > 1) {
-        // Open selection modal
-        setShiftSelectionModal({ staff, dateStr, shift, shiftTypes: types });
-        return;
-      }
-
       setShiftToSwap(shift);
       setSelectedShiftType(specificType || null);
       setRequesterStaff(staff);
@@ -797,24 +783,6 @@ export default function App() {
         staffList={staffList}
         onStaffUpdate={fetchData}
         allShifts={shifts}
-      />
-
-      {/* Shift Selection Modal */}
-      <ShiftSelectionModal
-        isOpen={!!shiftSelectionModal}
-        onClose={() => setShiftSelectionModal(null)}
-        staff={shiftSelectionModal?.staff || null}
-        dateStr={shiftSelectionModal?.dateStr || ''}
-        shift={shiftSelectionModal?.shift || null}
-        shiftTypes={shiftSelectionModal?.shiftTypes || []}
-        onSelect={(selectedType) => {
-          if (shiftSelectionModal) {
-            setShiftToSwap(shiftSelectionModal.shift);
-            setSelectedShiftType(selectedType === 'ALL' ? null : selectedType);
-            setRequesterStaff(shiftSelectionModal.staff);
-            setShiftSelectionModal(null);
-          }
-        }}
       />
 
       {/* Shift Swap Request Modal */}

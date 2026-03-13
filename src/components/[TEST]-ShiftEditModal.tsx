@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sun, Sunset, Moon, Ban, ArrowRightLeft } from 'lucide-react';
+import { X, Sun, Sunset, Moon, Ban } from 'lucide-react';
 import { ShiftType } from '../types';
 import clsx from 'clsx';
 
@@ -82,25 +82,6 @@ export function ShiftEditModal({ isOpen, onClose, onSave, currentShifts, staffNa
             );
           })}
         </div>
-
-        {currentShifts.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <button
-              onClick={() => {
-                // Trigger swap flow
-                const event = new CustomEvent('trigger-swap', { 
-                  detail: { staffName, dateStr, currentShifts } 
-                });
-                window.dispatchEvent(event);
-                onClose();
-              }}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-bold hover:bg-amber-100 transition-all shadow-sm"
-            >
-              <ArrowRightLeft className="w-4 h-4" />
-              สลับเวรนี้กับคนอื่น (บันทึกประวัติ)
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

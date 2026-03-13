@@ -74,8 +74,11 @@ export function Grid({
               รายชื่อบุคลากร
             </th>
             {days.map((day) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
               const isWknd = isWeekend(day);
               const isTdy = isToday(day);
+              const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+              
               return (
                 <th
                   key={day.toISOString()}
@@ -83,7 +86,8 @@ export function Grid({
                   className={clsx(
                     "px-0.5 py-2 text-center text-[9px] font-bold uppercase tracking-tighter border-r border-slate-200 transition-colors",
                     isWknd ? "bg-rose-50/50 text-rose-600" : "text-slate-400",
-                    isTdy && "bg-indigo-50/50 text-indigo-600"
+                    isTdy && "bg-indigo-50/50 text-indigo-600",
+                    isColHighlighted && "bg-yellow-100/50! text-yellow-700"
                   )}
                 >
                   <div className="flex flex-col items-center gap-0">
@@ -125,7 +129,10 @@ export function Grid({
 
             return (
               <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 bg-white z-10 border-r border-slate-200 group-hover:bg-slate-50 transition-colors overflow-hidden text-ellipsis">
+                <td className={clsx(
+                  "px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 z-10 border-r border-slate-200 transition-colors overflow-hidden text-ellipsis",
+                  (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id) ? "bg-yellow-100!" : "bg-white group-hover:bg-slate-50"
+                )}>
                   <div className="flex items-center gap-2">
                     <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center border transition-all ${
                       staff.name.startsWith('นาย') 
@@ -148,6 +155,11 @@ export function Grid({
                   const isSelectedRequester = shiftToSwap?.id === (shifts.find(s => s.staff_id === staff.id && s.date === dateStr)?.id || '');
                   const currentShift = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
                   const isSelectedTarget = targetShiftToSwap?.id === (currentShift?.id || `empty-${staff.id}-${dateStr}`);
+
+                  // Crosshair highlighting logic
+                  const isRowHighlighted = (selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id);
+                  const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+                  const isCrosshair = isRowHighlighted || isColHighlighted;
 
                   // Check for pending swaps
                   const pendingSwap = pendingSwaps.find(s => 
@@ -187,6 +199,7 @@ export function Grid({
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
+                          isCrosshair && "bg-yellow-50/40",
                           (isSelectedForMove || isSelectedRequester) && "bg-yellow-400! z-10",
                           isSelectedTarget && "bg-yellow-200! z-10",
                         )}
@@ -198,6 +211,16 @@ export function Grid({
                               return (
                                 <React.Fragment key={`${dateStr}-${idx}`}>
                                   <span 
+                                    onClick={(e) => {
+                                      if (user && !isAdmin) {
+                                        e.stopPropagation();
+                                        const staffObj = staffList.find(s => s.id === staff.id);
+                                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
+                                        if (staffObj) {
+                                          onShiftSwapRequest(staffObj, dateStr, shiftObj, shiftType);
+                                        }
+                                      }
+                                    }}
                                     className={clsx(
                                       "font-bold text-sm px-0.5 rounded transition-all", 
                                       shiftColors[shiftType],

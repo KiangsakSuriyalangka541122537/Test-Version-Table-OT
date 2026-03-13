@@ -62,9 +62,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       // Check for A/N conflict in target cell
       const targetShift = allShifts.find(s => s.staff_id === request.target_staff_id && s.date === request.target_date);
       const targetTypes = targetShift && targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-      
-      // If target_shift_type is 'O', it's a combine. If it's not 'O', it's a swap, so targetTypes will be replaced by types.
-      const combinedTypes = request.target_shift_type === 'O' ? Array.from(new Set([...targetTypes, ...types])) : [...types];
+      const combinedTypes = Array.from(new Set([...targetTypes, ...types]));
       
       if (combinedTypes.includes('A') && combinedTypes.includes('N')) {
         setError('ไม่สามารถอนุมัติได้เนื่องจากจะทำให้เกิดเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกัน');
