@@ -263,7 +263,7 @@ export default function App() {
       alert('เกิดข้อผิดพลาดในการสร้างคำขอ');
       return;
     }
-    alert('ส่งคำขอแลกเวรเรียบร้อยแล้ว รอผู้รับปลายทางยืนยัน');
+    alert('ส่งคำขอย้ายเวรเรียบร้อยแล้ว รอผู้รับปลายทางยืนยัน');
   };
 
   const acceptSwapRequest = async (requestId: string) => {
@@ -298,7 +298,7 @@ export default function App() {
     await supabase.from('test_shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED }).eq('id', requestId);
     
     fetchData();
-    alert('ยอมรับการแลกเวรเรียบร้อยแล้ว');
+    alert('ยอมรับการย้ายเวรเรียบร้อยแล้ว');
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
@@ -326,8 +326,8 @@ export default function App() {
       });
 
       alert(initialStatus === ShiftSwapStatus.WAITING_TARGET 
-        ? 'ส่งคำขอสลับเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
-        : 'ส่งคำขอสลับเวรแล้ว');
+        ? 'ส่งคำขอย้ายเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
+        : 'ส่งคำขอย้ายเวรแล้ว');
       
       setShiftToSwap(null);
       setSelectedShiftType(null);
@@ -335,7 +335,7 @@ export default function App() {
       fetchData(); // Refresh data to reflect any changes or new requests
     } catch (error) {
       console.error('Error sending swap request:', error);
-      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
+      alert('เกิดข้อผิดพลาดในการส่งคำขอย้ายเวร');
     }
   };
 
@@ -684,7 +684,7 @@ export default function App() {
                     <p className="text-sm font-medium text-yellow-900">
                       กำลังเลือกเวรของ <span className="font-bold">{staffList.find(s => s.id === selectedShiftForMove.staffId)?.name}</span> วันที่ {format(new Date(selectedShiftForMove.dateStr), 'dd/MM/yyyy')}
                     </p>
-                    <p className="text-xs text-yellow-700">คลิกช่องอื่นเพื่อย้าย/สลับ หรือคลิกที่เดิมเพื่อแก้ไข</p>
+                    <p className="text-xs text-yellow-700">คลิกช่องอื่นเพื่อย้าย หรือคลิกที่เดิมเพื่อแก้ไข</p>
                   </div>
                 </div>
                 <button 
@@ -737,7 +737,7 @@ export default function App() {
                     disabled={!shiftToSwap || !targetShiftToSwap}
                     className="px-4 py-1.5 bg-yellow-600 text-white text-xs font-bold rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
-                    ยืนยันการสลับ
+                    ยืนยันการย้าย
                   </button>
                 </div>
               </div>
