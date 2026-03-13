@@ -302,7 +302,7 @@ export default function App() {
       console.log('Is different staff:', isDifferentStaff);
       
       const initialStatus = isDifferentStaff 
-        ? ShiftSwapStatus.PENDING 
+        ? ShiftSwapStatus.WAITING_TARGET 
         : ShiftSwapStatus.PENDING;
       
       console.log('Initial status:', initialStatus);
@@ -317,7 +317,7 @@ export default function App() {
       
       console.log('Payload to insert:', payload);
 
-      const { data, error } = await supabase.from('test_shift_swap_requests').insert(payload).select();
+      const { data, error } = await supabase.from('shift_swap_requests').insert(payload).select();
       
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));
@@ -339,9 +339,9 @@ export default function App() {
       setSelectedShiftType(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending swap request:', error);
-      alert(`เกิดข้อผิดพลาดในการส่งคำขอสลับเวร: ${error?.message || 'Unknown error'}`);
+      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
     }
   };
 

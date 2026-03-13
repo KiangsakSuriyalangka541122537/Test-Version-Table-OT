@@ -76,7 +76,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         .from('shift_swap_requests')
         .select('*')
         .eq('target_staff_id', currentUserStaff.id)
-        .eq('status', ShiftSwapStatus.PENDING)
+        .eq('status', ShiftSwapStatus.WAITING_TARGET)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
