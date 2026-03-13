@@ -91,25 +91,6 @@ export function ShiftSwapRequestModal({
     // Determine which shift type to move
     let shiftTypeToMove = selectedShiftType || requesterShift.shift_type;
     const types = requesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
-    
-    if (!selectedShiftType && types.length > 1) {
-      const hasM = types.includes('M');
-      const hasA = types.includes('A');
-      const hasN = types.includes('N');
-      
-      if (hasM && (hasA || hasN)) {
-        // User specifically requested: if M is paired with A or N, ONLY move M
-        shiftTypeToMove = 'M';
-      } else if (targetShiftId.startsWith('empty-')) {
-        // If moving to an empty slot and it's a double shift (e.g., A|N - though A|N is forbidden on same day)
-        // we keep them together if they are A or N to maintain pairing logic
-        if (hasA || hasN) {
-          shiftTypeToMove = requesterShift.shift_type;
-        } else {
-          shiftTypeToMove = types[0];
-        }
-      }
-    }
 
     // Validation logic
     if (targetShift) {
@@ -242,29 +223,20 @@ export function ShiftSwapRequestModal({
   // Helper for UI display
   const getShiftTypeToDisplay = () => {
     if (!selectedRequesterShift || !selectedTargetShift) return '';
-    if (selectedShiftType) return selectedShiftType;
+    let type = selectedShiftType || selectedRequesterShift.shift_type;
     
-    const types = selectedRequesterShift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+    const types = type.split(',').map(t => t.trim()).filter(Boolean);
+    const hasM = types.includes('M');
+    const hasA = types.includes('A');
+    const hasN = types.includes('N');
     
-    if (types.length > 1) {
-      const hasM = types.includes('M');
-      const hasA = types.includes('A');
-      const hasN = types.includes('N');
-      
-      if (hasM && (hasA || hasN)) {
-        return 'M';
-      }
-      
-      if (selectedTargetShift.id.startsWith('empty-')) {
-        if (!hasA && !hasN) {
-          return types[0];
-        }
-      }
-    }
-    return selectedRequesterShift.shift_type;
+    if (hasM && (hasA || hasN)) return 'ช, บ+ด';
+    if (hasA || hasN) return 'บ+ด';
+    if (hasM) return 'ช';
+    return type;
   };
 
-  const isPartialDisplay = getShiftTypeToDisplay() !== selectedRequesterShift?.shift_type;
+  const isPartialDisplay = (selectedShiftType || selectedRequesterShift?.shift_type) !== selectedRequesterShift?.shift_type;
 
   // Helper to find paired shift
   const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
@@ -319,7 +291,7 @@ export function ShiftSwapRequestModal({
               </div>
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
+                  <div className="w-auto px-3 h-10 min-w-[2.5rem] bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100 w-max">
                     <span className="text-emerald-600 font-bold text-xs">
                       {getShiftTypeToDisplay()}
                     </span>
@@ -342,7 +314,7 @@ export function ShiftSwapRequestModal({
                   </div>
                 </div>
                 <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
+                  <div className="w-auto px-3 h-10 min-w-[2.5rem] bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100 w-max">
                     <span className="text-emerald-600 font-bold text-xs">
                       {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
                     </span>

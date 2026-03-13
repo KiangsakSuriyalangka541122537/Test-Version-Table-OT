@@ -11,6 +11,7 @@ import { ShiftEditModal } from './components/[TEST]-ShiftEditModal';
 import { StatsModal } from './components/[TEST]-StatsModal';
 import { AdminManager } from './components/[TEST]-AdminManager';
 import { ShiftSwapRequestModal } from './components/[TEST]-ShiftSwapRequestModal';
+import { ShiftSelectionModal } from './components/[TEST]-ShiftSelectionModal';
 import { ShiftSwapHistory } from './components/[TEST]-ShiftSwapHistory';
 import { ExportPDFTemplate } from './components/[TEST]-ExportPDFTemplate';
 import { RefreshCw } from 'lucide-react';
@@ -44,6 +45,12 @@ export default function App() {
   
   // Shift Swap Request Modal state
   const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
+  const [shiftSelectionModal, setShiftSelectionModal] = useState<{
+    staff: Staff;
+    dateStr: string;
+    shift: Shift;
+    shiftTypes: ShiftType[];
+  } | null>(null);
   const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType | null>(null);
   const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
@@ -111,21 +118,6 @@ export default function App() {
     cleanupDuplicates();
     fetchData();
   }, [currentMonth]);
-
-  useEffect(() => {
-    const handleTriggerSwap = (e: any) => {
-      const { staffName, dateStr, currentShifts } = e.detail;
-      const staff = staffList.find(s => s.name === staffName);
-      const shift = shifts.find(s => s.staff_id === staff?.id && s.date === dateStr);
-      
-      if (staff && shift) {
-        handleShiftSwapRequest(staff, dateStr, shift);
-      }
-    };
-
-    window.addEventListener('trigger-swap', handleTriggerSwap);
-    return () => window.removeEventListener('trigger-swap', handleTriggerSwap);
-  }, [staffList, shifts]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -222,6 +214,13 @@ export default function App() {
 
     if (!shiftToSwap) {
       // Select source
+      const types = shift.shift_type.split(',').map(t => t.trim() as ShiftType).filter(Boolean);
+      if (!specificType && types.length > 1) {
+        // Open selection modal
+        setShiftSelectionModal({ staff, dateStr, shift, shiftTypes: types });
+        return;
+      }
+
       setShiftToSwap(shift);
       setSelectedShiftType(specificType || null);
       setRequesterStaff(staff);
@@ -295,36 +294,21 @@ export default function App() {
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Sending swap request:', request);
-      console.log('Checking requester_staff_id:', request.requester_staff_id);
-      console.log('Checking target_staff_id:', request.target_staff_id);
-      
-      const isDifferentStaff = request.target_staff_id !== request.requester_staff_id;
-      console.log('Is different staff:', isDifferentStaff);
-      
-      const initialStatus = isDifferentStaff 
+      const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
         ? ShiftSwapStatus.WAITING_TARGET 
         : ShiftSwapStatus.PENDING;
       
-      console.log('Initial status:', initialStatus);
-      
-      const payload = {
+      const { error } = await supabase.from('test_shift_swap_requests').insert({
         ...request,
         target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
           ? request.target_shift_id 
           : null,
         status: initialStatus
-      };
-      
-      console.log('Payload to insert:', payload);
-
-      const { data, error } = await supabase.from('test_shift_swap_requests').insert(payload).select();
-      
+      });
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));
         throw error;
       }
-      
-      console.log('Insert successful:', data);
 
       await supabase.from('test_logs').insert({
         message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
@@ -339,9 +323,9 @@ export default function App() {
       setSelectedShiftType(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending swap request:', error);
-      alert(`เกิดข้อผิดพลาดในการส่งคำขอสลับเวร: ${error?.message || 'Unknown error'}`);
+      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
     }
   };
 
@@ -813,6 +797,24 @@ export default function App() {
         staffList={staffList}
         onStaffUpdate={fetchData}
         allShifts={shifts}
+      />
+
+      {/* Shift Selection Modal */}
+      <ShiftSelectionModal
+        isOpen={!!shiftSelectionModal}
+        onClose={() => setShiftSelectionModal(null)}
+        staff={shiftSelectionModal?.staff || null}
+        dateStr={shiftSelectionModal?.dateStr || ''}
+        shift={shiftSelectionModal?.shift || null}
+        shiftTypes={shiftSelectionModal?.shiftTypes || []}
+        onSelect={(selectedType) => {
+          if (shiftSelectionModal) {
+            setShiftToSwap(shiftSelectionModal.shift);
+            setSelectedShiftType(selectedType === 'ALL' ? null : selectedType);
+            setRequesterStaff(shiftSelectionModal.staff);
+            setShiftSelectionModal(null);
+          }
+        }}
       />
 
       {/* Shift Swap Request Modal */}
