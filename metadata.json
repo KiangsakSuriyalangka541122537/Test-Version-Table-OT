@@ -1,5 +1,5 @@
 {
-  "name": "Test Version Table-OT",
-  "description": "จัดตารางเวร OT ฉบับทดสอบแก้ไข",
+  "name": "OT-COM-TSM",
+  "description": "จัดตารางเวรพี่กิ๊ก OT ฉบับใช้งานจริง",
   "requestFramePermissions": []
 }
