@@ -648,7 +648,15 @@ export default function App() {
         setCurrentMonth={setCurrentMonth}
         user={user}
         onLoginClick={() => setIsLoginOpen(true)}
-        onLogout={() => setUser(null)}
+        onLogout={() => {
+          setUser(null);
+          setShiftToSwap(null);
+          setTargetShiftToSwap(null);
+          setSelectedShiftType(null);
+          setRequesterStaff(null);
+          setPendingSelectionData(null);
+          setSelectedShiftForMove(null);
+        }}
         onExportPDF={handleExportPDF}
         onExportExcel={handleExportExcel}
         onAdminClick={() => setIsAdminOpen(true)}
@@ -738,7 +746,14 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase text-yellow-600">กะของคุณ:</span>
                       {shiftToSwap ? (
-                        <span className="text-sm font-bold text-yellow-900">{format(new Date(shiftToSwap.date), 'dd/MM')} ({shiftToSwap.shift_type})</span>
+                        <span className="text-sm font-bold text-yellow-900">
+                          {format(new Date(shiftToSwap.date), 'dd/MM')} ({
+                            shiftToSwap.shift_type?.split(',').map(t => {
+                              const trimmed = t.trim();
+                              return trimmed === 'M' ? 'ช' : trimmed === 'A' ? 'บ' : trimmed === 'N' ? 'ด' : trimmed;
+                            }).join(',')
+                          })
+                        </span>
                       ) : (
                         <span className="text-xs italic text-yellow-600/60">ยังไม่ได้เลือก</span>
                       )}
@@ -749,7 +764,12 @@ export default function App() {
                       {targetShiftToSwap ? (
                         <span className="text-sm font-bold text-yellow-900">
                           {staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name?.split(' ')[0] || 'ไม่พบพนักงาน'} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} 
-                          {targetShiftToSwap.id.startsWith('empty-') ? ' (ช่องว่าง)' : ` (${targetShiftToSwap.shift_type})`}
+                          {targetShiftToSwap.id.startsWith('empty-') ? ' (ช่องว่าง)' : ` (${
+                            targetShiftToSwap.shift_type?.split(',').map(t => {
+                              const trimmed = t.trim();
+                              return trimmed === 'M' ? 'ช' : trimmed === 'A' ? 'บ' : trimmed === 'N' ? 'ด' : trimmed;
+                            }).join(',')
+                          })`}
                         </span>
                       ) : (
                         <span className="text-xs italic text-yellow-600/60">ยังไม่ได้เลือก</span>
