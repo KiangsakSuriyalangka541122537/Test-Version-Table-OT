@@ -4,6 +4,7 @@ import { format, getDaysInMonth, isWeekend } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { Staff, Shift } from '../types';
 import { getThaiBaht } from './[TEST]-thaiBaht';
+import { calculateShiftCount, calculateTotalPay } from './[TEST]-shiftUtils';
 
 export const exportToExcel = async (currentMonth: Date, staffList: Staff[], shifts: Shift[]) => {
   const workbook = new ExcelJS.Workbook();
@@ -153,11 +154,15 @@ export const exportToExcel = async (currentMonth: Date, staffList: Staff[], shif
       const row = sheet.getRow(currentRowIdx);
       const staffShifts = shifts.filter(s => s.staff_id === staff.id);
       
-      const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-      const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-      const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
-      const totalShifts = mCount + ((aCount + nCount) / 2);
-      const totalPay = totalShifts * 750;
+      let allTypes: string[] = [];
+      staffShifts.forEach(s => {
+        if (s.shift_type) {
+          allTypes.push(...s.shift_type.split(','));
+        }
+      });
+
+      const totalShifts = calculateShiftCount(allTypes);
+      const totalPay = calculateTotalPay(totalShifts);
 
       grandTotalShifts += totalShifts;
       grandTotalPay += totalPay;

@@ -62,18 +62,27 @@ export function formatShiftDisplay(types: string[]): string {
 }
 
 /**
- * Calculates the total shift count.
- * M, A, N, OT count as 1.
- * O (Off) counts as 0? Or 1?
- * Usually "Off" doesn't count towards "work shifts".
- * But "OT" definitely counts.
+ * Calculates the total shift count based on specific rules:
+ * - 'M' (Morning) counts as 1 shift.
+ * - 'A' (Afternoon) counts as 1 shift (representing the start of an A+N pair).
+ * - 'N' (Night) counts as 0 shifts (as it's the completion of an A+N pair already counted by 'A').
+ * - 'OT' counts as 1 shift.
+ * - 'O' (Off) counts as 0 shifts.
  */
 export function calculateShiftCount(types: string[]): number {
   let count = 0;
   types.forEach(t => {
-    if (t !== 'O') { // Assuming 'O' is Off/Rest and doesn't count as a work shift
+    if (t === 'M' || t === 'A' || t === 'OT') {
       count += 1;
     }
   });
   return count;
+}
+
+/**
+ * Calculates the total pay based on shift count.
+ * Rate is 750 per full shift.
+ */
+export function calculateTotalPay(shiftCount: number): number {
+  return shiftCount * 750;
 }

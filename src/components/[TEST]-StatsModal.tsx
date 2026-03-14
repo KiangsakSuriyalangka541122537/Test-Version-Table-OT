@@ -3,6 +3,7 @@ import { X, BarChart2, TrendingUp, Users, Wallet, Clock, User as UserIcon } from
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import { Staff, Shift } from '../types';
+import { calculateShiftCount, calculateTotalPay } from '../utils/[TEST]-shiftUtils';
 import clsx from 'clsx';
 
 interface StatsModalProps {
@@ -18,16 +19,24 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
   const stats = useMemo(() => {
     return staffList.map(staff => {
       const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-      const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-      const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-      const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
       
-      // Calculate total shifts: M is 1 shift, A+N pair is 1 shift
-      // We use (A+N)/2 to handle month boundaries correctly
-      const totalShifts = mCount + ((aCount + nCount) / 2);
+      let mCount = 0;
+      let aCount = 0;
+      let nCount = 0;
+      let allTypes: string[] = [];
+
+      staffShifts.forEach(s => {
+        if (s.shift_type) {
+          const types = s.shift_type.split(',');
+          allTypes.push(...types);
+          if (types.includes('M')) mCount++;
+          if (types.includes('A')) aCount++;
+          if (types.includes('N')) nCount++;
+        }
+      });
       
-      // Calculate OT pay: 750 per full shift
-      const otPay = totalShifts * 750;
+      const totalShifts = calculateShiftCount(allTypes);
+      const otPay = calculateTotalPay(totalShifts);
 
       return {
         name: staff.name,

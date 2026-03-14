@@ -3,6 +3,7 @@ import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User as UserIcon } from 'lucide-react';
 import { Staff, Shift, ShiftType, User, ShiftSwapRequest } from '../types';
+import { calculateShiftCount, calculateTotalPay } from '../utils/[TEST]-shiftUtils';
 import clsx from 'clsx';
 
 interface GridProps {
@@ -122,21 +123,15 @@ export function Grid({
         <tbody className="bg-white divide-y divide-slate-100">
           {staffList.map((staff) => {
             const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-            let mCount = 0;
-            let aCount = 0;
-            let nCount = 0;
-            
+            let allShiftTypes: string[] = [];
             staffShifts.forEach(s => {
               if (s.shift_type) {
-                const types = s.shift_type.split(',');
-                if (types.includes('M')) mCount++;
-                if (types.includes('A')) aCount++;
-                if (types.includes('N')) nCount++;
+                allShiftTypes.push(...s.shift_type.split(','));
               }
             });
             
-            const totalShifts = mCount + ((aCount + nCount) / 2);
-            const totalPay = totalShifts * 750;
+            const totalShifts = calculateShiftCount(allShiftTypes);
+            const totalPay = calculateTotalPay(totalShifts);
 
             return (
               <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -264,36 +259,31 @@ export function Grid({
                 <span className="text-sm font-black text-indigo-700">
                   {staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                    let m = 0, a = 0, n = 0;
+                    let types: string[] = [];
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
-                        const types = s.shift_type.split(',');
-                        if (types.includes('M')) m++;
-                        if (types.includes('A')) a++;
-                        if (types.includes('N')) n++;
+                        types.push(...s.shift_type.split(','));
                       }
                     });
-                    return acc + m + ((a + n) / 2);
+                    return acc + calculateShiftCount(types);
                   }, 0)}
                 </span>
               </td>
               {user && (
                 <td className="px-1 py-3 whitespace-nowrap text-center bg-emerald-100/30 border-l border-slate-200">
-                  <span className="text-sm font-black text-emerald-700">
-                    ฿{staffList.reduce((acc, staff) => {
-                      const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                      let m = 0, a = 0, n = 0;
-                      staffShifts.forEach(s => {
-                        if (s.shift_type) {
-                          const types = s.shift_type.split(',');
-                          if (types.includes('M')) m++;
-                          if (types.includes('A')) a++;
-                          if (types.includes('N')) n++;
-                        }
-                      });
-                      return acc + (m + ((a + n) / 2)) * 750;
-                    }, 0).toLocaleString()}
-                  </span>
+                <span className="text-sm font-black text-emerald-700">
+                  ฿{staffList.reduce((acc, staff) => {
+                    const staffShifts = shifts.filter(s => s.staff_id === staff.id);
+                    let types: string[] = [];
+                    staffShifts.forEach(s => {
+                      if (s.shift_type) {
+                        types.push(...s.shift_type.split(','));
+                      }
+                    });
+                    const count = calculateShiftCount(types);
+                    return acc + calculateTotalPay(count);
+                  }, 0).toLocaleString()}
+                </span>
                 </td>
               )}
             </tr>
