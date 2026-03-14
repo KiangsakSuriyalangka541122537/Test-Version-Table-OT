@@ -168,10 +168,10 @@ export function Grid({
                   const isCrosshair = isRowHighlighted || isColHighlighted;
 
                   // Check for pending swaps
-                  const isPendingTarget = pendingSwaps.some(s => 
+                  const isPendingTarget = !!user && pendingSwaps.some(s => 
                     s.target_staff_id === staff.id && s.target_date === dateStr
                   );
-                  const isPendingRequester = pendingSwaps.some(s => 
+                  const isPendingRequester = !!user && pendingSwaps.some(s => 
                     s.requester_staff_id === staff.id && s.requester_date === dateStr
                   );
 
