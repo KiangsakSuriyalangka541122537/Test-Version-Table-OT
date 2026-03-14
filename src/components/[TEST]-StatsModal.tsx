@@ -65,6 +65,29 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
     return null;
   };
 
+  const renderCustomLegend = (props: any) => {
+    const { payload } = props;
+    // Order requested: ดึก, บ่าย, เช้า
+    const order = ['ดึก', 'บ่าย', 'เช้า'];
+    const sortedPayload = [...payload].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
+
+    return (
+      <div className="flex justify-center items-center gap-6 pt-6">
+        {sortedPayload.map((entry: any, index: number) => (
+          <div key={`item-${index}`} className="flex items-center gap-2 group cursor-default">
+            <div 
+              className="w-4 h-4 rounded-full shadow-sm transition-transform group-hover:scale-110" 
+              style={{ backgroundColor: entry.color }} 
+            />
+            <span className="text-sm font-bold tracking-wide" style={{ color: entry.color }}>
+              {entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6">
       <motion.div 
@@ -152,7 +175,7 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Legend content={renderCustomLegend} />
                   <Bar dataKey="M" stackId="a" fill="#3b82f6" name="เช้า" radius={[0, 0, 4, 4]} />
                   <Bar dataKey="A" stackId="a" fill="#f97316" name="บ่าย" />
                   <Bar dataKey="N" stackId="a" fill="#a855f7" name="ดึก" radius={[4, 4, 0, 0]} />
