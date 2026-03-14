@@ -62,7 +62,6 @@ export function ShiftTypeSelectionModal({
                 className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${shiftColors['M']}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-black">M</span>
                   <span className="font-bold text-sm">ย้ายเวรเช้า</span>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-white transition-colors">
@@ -89,7 +88,6 @@ export function ShiftTypeSelectionModal({
                   className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${colorClass}`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-black">{others.join('|')}</span>
                     <span className="font-bold text-sm">{label}</span>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-white transition-colors">

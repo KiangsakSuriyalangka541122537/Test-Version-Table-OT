@@ -686,17 +686,17 @@ export default function App() {
               <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-1.5 px-2">
                   <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-200"></div>
-                  <span className="text-xs font-semibold text-slate-600">เช้า (M)</span>
+                  <span className="text-xs font-semibold text-slate-600">เช้า</span>
                 </div>
                 <div className="w-px h-3 bg-slate-200"></div>
                 <div className="flex items-center gap-1.5 px-2">
                   <div className="w-2.5 h-2.5 bg-orange-500 rounded-full shadow-sm shadow-orange-200"></div>
-                  <span className="text-xs font-semibold text-slate-600">บ่าย (A)</span>
+                  <span className="text-xs font-semibold text-slate-600">บ่าย</span>
                 </div>
                 <div className="w-px h-3 bg-slate-200"></div>
                 <div className="flex items-center gap-1.5 px-2">
                   <div className="w-2.5 h-2.5 bg-purple-500 rounded-full shadow-sm shadow-purple-200"></div>
-                  <span className="text-xs font-semibold text-slate-600">ดึก (N)</span>
+                  <span className="text-xs font-semibold text-slate-600">ดึก</span>
                 </div>
               </div>
             </div>
@@ -705,7 +705,12 @@ export default function App() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <span className="text-yellow-700 font-bold text-xs">{selectedShiftForMove.shiftType}</span>
+                    <span className="text-yellow-700 font-bold text-xs">
+                      {selectedShiftForMove.shiftType === 'M' ? 'เช้า' : 
+                       selectedShiftForMove.shiftType === 'A' ? 'บ่าย' : 
+                       selectedShiftForMove.shiftType === 'N' ? 'ดึก' : 
+                       selectedShiftForMove.shiftType === 'A,N' ? 'บ่าย+ดึก' : selectedShiftForMove.shiftType}
+                    </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-yellow-900">

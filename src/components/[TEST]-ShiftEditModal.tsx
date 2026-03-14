@@ -41,7 +41,9 @@ export function ShiftEditModal({ isOpen, onClose, onSave, currentShifts, staffNa
             <div className="mt-2 flex gap-2">
               <span className="text-xs text-gray-500">กะปัจจุบัน:</span>
               {currentShifts.map((s, i) => (
-                <span key={i} className="text-xs font-bold px-2 py-0.5 rounded bg-gray-100">{s}</span>
+                <span key={i} className="text-xs font-bold px-2 py-0.5 rounded bg-gray-100">
+                  {s === 'M' ? 'ช' : s === 'A' ? 'บ' : s === 'N' ? 'ด' : s}
+                </span>
               ))}
             </div>
           )}
