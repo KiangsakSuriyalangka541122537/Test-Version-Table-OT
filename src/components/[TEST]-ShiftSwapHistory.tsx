@@ -101,10 +101,9 @@ export function ShiftSwapHistory({
   };
 
   const getShiftLabel = (type: string) => {
+    if (type === 'A,N' || type === 'A+N' || type === 'A' || type === 'N') return 'บ่าย+ดึก';
     switch (type) {
       case 'M': return 'เช้า';
-      case 'A': return 'บ่าย';
-      case 'N': return 'ดึก';
       case 'O': return 'หยุด';
       default: return type;
     }
@@ -209,7 +208,9 @@ export function ShiftSwapHistory({
                           "text-[9px] font-black px-1.5 py-0.5 rounded shrink-0",
                           item.requester_shift_type === 'M' ? "bg-blue-500 text-white" :
                           item.requester_shift_type === 'A' ? "bg-orange-500 text-white" :
-                          item.requester_shift_type === 'N' ? "bg-purple-500 text-white" : "bg-slate-400 text-white"
+                          item.requester_shift_type === 'N' ? "bg-purple-500 text-white" : 
+                          (item.requester_shift_type === 'A,N' || item.requester_shift_type === 'A+N') ? "bg-gradient-to-r from-orange-500 to-purple-500 text-white" :
+                          "bg-slate-400 text-white"
                         )}>
                           {getShiftLabel(item.requester_shift_type)}
                         </span>
@@ -236,7 +237,9 @@ export function ShiftSwapHistory({
                           "text-[9px] font-black px-1.5 py-0.5 rounded shrink-0",
                           item.target_shift_type === 'M' ? "bg-blue-500 text-white" :
                           item.target_shift_type === 'A' ? "bg-orange-500 text-white" :
-                          item.target_shift_type === 'N' ? "bg-purple-500 text-white" : "bg-slate-400 text-white"
+                          item.target_shift_type === 'N' ? "bg-purple-500 text-white" : 
+                          (item.target_shift_type === 'A,N' || item.target_shift_type === 'A+N') ? "bg-gradient-to-r from-orange-500 to-purple-500 text-white" :
+                          "bg-slate-400 text-white"
                         )}>
                           {getShiftLabel(item.target_shift_type)}
                         </span>

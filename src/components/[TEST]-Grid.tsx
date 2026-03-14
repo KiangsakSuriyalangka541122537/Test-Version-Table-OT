@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
+import { format, getDaysInMonth, isWeekend, isToday, addDays } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User as UserIcon } from 'lucide-react';
 import { Staff, Shift, ShiftType, User, ShiftSwapRequest } from '../types';
@@ -37,6 +37,11 @@ const shiftLabels: Record<ShiftType, string> = {
   A: 'บ',
   N: 'ด',
   O: 'หยุด',
+};
+
+const parseDateSafe = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
 };
 
 export function Grid({ 
@@ -185,12 +190,41 @@ export function Grid({
                   );
                   
                   // Check if this cell is part of any currently hovered swap
-                  const isHoveredSwap = approvedSwaps.some(s => 
-                    hoveredSwapIds.includes(s.id) && (
-                      (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
-                      (s.target_staff_id === staff.id && s.target_date === dateStr)
-                    )
-                  );
+                  const isHoveredSwap = approvedSwaps.some(s => {
+                    if (!hoveredSwapIds.includes(s.id)) return false;
+                    
+                    const isRequester = s.requester_staff_id === staff.id;
+                    const isTarget = s.target_staff_id === staff.id;
+                    
+                    if (isRequester) {
+                      if (s.requester_date === dateStr) return true;
+                      // Handle A/N pairing: if A is moved, N on next day is also moved
+                      if (s.requester_shift_type?.includes('A')) {
+                        const nextDay = format(addDays(parseDateSafe(s.requester_date), 1), 'yyyy-MM-dd');
+                        if (nextDay === dateStr) return true;
+                      }
+                      // If N is moved, A on previous day is also moved
+                      if (s.requester_shift_type?.includes('N')) {
+                        const prevDay = format(addDays(parseDateSafe(s.requester_date), -1), 'yyyy-MM-dd');
+                        if (prevDay === dateStr) return true;
+                      }
+                    }
+                    
+                    if (isTarget) {
+                      if (s.target_date === dateStr) return true;
+                      // Handle A/N pairing
+                      if (s.target_shift_type?.includes('A')) {
+                        const nextDay = format(addDays(parseDateSafe(s.target_date), 1), 'yyyy-MM-dd');
+                        if (nextDay === dateStr) return true;
+                      }
+                      if (s.target_shift_type?.includes('N')) {
+                        const prevDay = format(addDays(parseDateSafe(s.target_date), -1), 'yyyy-MM-dd');
+                        if (prevDay === dateStr) return true;
+                      }
+                    }
+                    
+                    return false;
+                  });
 
                     return (
                       <td
