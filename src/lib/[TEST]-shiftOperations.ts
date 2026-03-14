@@ -66,11 +66,6 @@ export const validateShiftOperations = (
         throw new Error(`ไม่สามารถมีมากกว่า 2 เวรใน 1 วันได้ (วันที่ ${date})`);
       }
       
-      // Rule 2: Cannot have A and N in the same day
-      if (types.includes('A') && types.includes('N')) {
-        throw new Error(`ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้ (วันที่ ${date})`);
-      }
-      
       // Count for daily uniqueness
       for (const t of types) {
         if (t === 'M' || t === 'A' || t === 'N') {

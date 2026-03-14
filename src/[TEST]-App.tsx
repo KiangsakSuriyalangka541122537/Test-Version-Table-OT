@@ -405,11 +405,6 @@ export default function App() {
           }
         } else {
           // Toggle on
-          // Rule: Cannot have both A (บ่าย) and N (ดึก) in the same cell
-          if ((newShiftType === 'A' && currentTypes.includes('N')) || (newShiftType === 'N' && currentTypes.includes('A'))) {
-            alert('ไม่สามารถมีเวรบ่าย (บ) และเวรดึก (ด) ในช่องเดียวกันได้');
-            return;
-          }
           
           // Rule: Max 2 shifts per day
           if (currentTypes.length >= 2) {
