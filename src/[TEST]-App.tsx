@@ -651,6 +651,13 @@ export default function App() {
           setRequesterStaff(null);
           setPendingSelectionData(null);
           setSelectedShiftForMove(null);
+          setIsAdminOpen(false);
+          setIsLoginOpen(false);
+          setIsStatsOpen(false);
+          setIsHelpOpen(false);
+          setIsShiftEditOpen(false);
+          setIsShiftSwapRequestModalOpen(false);
+          setIsShiftTypeSelectionOpen(false);
         }}
         onExportPDF={handleExportPDF}
         onExportExcel={handleExportExcel}
