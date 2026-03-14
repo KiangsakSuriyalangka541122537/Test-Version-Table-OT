@@ -87,7 +87,7 @@ export function Grid({
               const dateStr = format(day, 'yyyy-MM-dd');
               const isWknd = isWeekend(day);
               const isTdy = isToday(day);
-              const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+              const isColHighlighted = !!user && ((selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr));
               
               return (
                 <th
@@ -137,7 +137,7 @@ export function Grid({
               <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className={clsx(
                   "px-3 py-3 whitespace-nowrap text-xs font-semibold text-slate-700 sticky left-0 z-10 border-r border-slate-200 transition-colors overflow-hidden text-ellipsis",
-                  (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id) ? "bg-yellow-100!" : "bg-white group-hover:bg-slate-50"
+                  (!!user && (selectedShiftForMove?.staffId === staff.id || shiftToSwap?.staff_id === staff.id)) ? "bg-yellow-100!" : "bg-white group-hover:bg-slate-50"
                 )}>
                   <div className="flex items-center gap-2">
                     <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center border transition-all ${
@@ -157,14 +157,14 @@ export function Grid({
                   const currentShifts = getShiftsForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
-                  const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
-                  const isSelectedRequester = shiftToSwap?.id === (shifts.find(s => s.staff_id === staff.id && s.date === dateStr)?.id || '');
+                  const isSelectedForMove = !!user && selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
+                  const isSelectedRequester = !!user && shiftToSwap?.id === (shifts.find(s => s.staff_id === staff.id && s.date === dateStr)?.id || '');
                   const currentShift = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
-                  const isSelectedTarget = targetShiftToSwap?.id === (currentShift?.id || `empty-${staff.id}-${dateStr}`);
+                  const isSelectedTarget = !!user && targetShiftToSwap?.id === (currentShift?.id || `empty-${staff.id}-${dateStr}`);
 
                   // Crosshair highlighting logic
-                  const isRowHighlighted = (selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id);
-                  const isColHighlighted = (selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr);
+                  const isRowHighlighted = !!user && ((selectedShiftForMove?.staffId === staff.id) || (shiftToSwap?.staff_id === staff.id));
+                  const isColHighlighted = !!user && ((selectedShiftForMove?.dateStr === dateStr) || (shiftToSwap?.date === dateStr));
                   const isCrosshair = isRowHighlighted || isColHighlighted;
 
                   // Check for pending swaps
