@@ -63,6 +63,9 @@ export default function App() {
   // Shift Move/Swap state (Admin)
   const [selectedShiftForMove, setSelectedShiftForMove] = useState<{ staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null>(null);
 
+  // Shared Hover state for Swap Highlighting
+  const [hoveredSwapIds, setHoveredSwapIds] = useState<string[]>([]);
+
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin' && user?.username === 'kik';
   const pdfRef = React.useRef<HTMLDivElement>(null);
@@ -819,6 +822,8 @@ export default function App() {
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
+                  hoveredSwapIds={hoveredSwapIds}
+                  setHoveredSwapIds={setHoveredSwapIds}
                 />
                 
                 <div ref={historyRef}>
@@ -826,6 +831,8 @@ export default function App() {
                     staffList={staffList}
                     currentMonth={currentMonth}
                     lastUpdated={lastActionTimestamp}
+                    hoveredSwapIds={hoveredSwapIds}
+                    setHoveredSwapIds={setHoveredSwapIds}
                   />
                 </div>
               </>

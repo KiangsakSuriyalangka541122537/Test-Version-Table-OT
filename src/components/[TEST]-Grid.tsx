@@ -21,6 +21,8 @@ interface GridProps {
   targetShiftToSwap?: Shift | null;
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
+  hoveredSwapIds: string[];
+  setHoveredSwapIds: (ids: string[]) => void;
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -51,9 +53,10 @@ export function Grid({
   selectedShiftType,
   targetShiftToSwap,
   pendingSwaps = [],
-  approvedSwaps = []
+  approvedSwaps = [],
+  hoveredSwapIds,
+  setHoveredSwapIds
 }: GridProps) {
-  const [hoveredSwapIds, setHoveredSwapIds] = React.useState<string[]>([]);
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -202,11 +205,22 @@ export function Grid({
                             onShiftSwapRequest(staffObj, dateStr, shiftObj);
                           }
                         }}
+                        onMouseEnter={() => {
+                          const relatedSwaps = approvedSwaps.filter(s => 
+                            (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                            (s.target_staff_id === staff.id && s.target_date === dateStr)
+                          );
+                          if (relatedSwaps.length > 0) {
+                            setHoveredSwapIds(relatedSwaps.map(s => s.id));
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredSwapIds([])}
                         className={clsx(
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
                           isWknd && "bg-rose-50/10",
                           isCrosshair && "bg-yellow-50/40",
+                          isHoveredSwap && "bg-yellow-100! z-10",
                           (isSelectedForMove || isSelectedRequester || isPendingRequester) && "bg-yellow-400! z-10",
                           (isSelectedTarget || isPendingTarget) && "bg-yellow-200! z-10",
                         )}

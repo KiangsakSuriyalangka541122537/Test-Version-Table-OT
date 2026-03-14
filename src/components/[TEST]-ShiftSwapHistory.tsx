@@ -10,9 +10,17 @@ interface ShiftSwapHistoryProps {
   staffList: Staff[];
   currentMonth: Date;
   lastUpdated: number; // Prop to trigger refetch
+  hoveredSwapIds: string[];
+  setHoveredSwapIds: (ids: string[]) => void;
 }
 
-export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: ShiftSwapHistoryProps) {
+export function ShiftSwapHistory({ 
+  staffList, 
+  currentMonth, 
+  lastUpdated,
+  hoveredSwapIds,
+  setHoveredSwapIds
+}: ShiftSwapHistoryProps) {
   const [history, setHistory] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -162,7 +170,17 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 lg:p-6 bg-slate-50/30">
             {history.map((item) => (
-              <div key={item.id} className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group flex flex-col">
+              <div 
+                key={item.id} 
+                onMouseEnter={() => setHoveredSwapIds([item.id])}
+                onMouseLeave={() => setHoveredSwapIds([])}
+                className={clsx(
+                  "bg-white p-5 rounded-2xl border transition-all group flex flex-col",
+                  hoveredSwapIds.includes(item.id) 
+                    ? "border-yellow-400 shadow-md bg-yellow-50/30" 
+                    : "border-slate-100 hover:border-indigo-200 hover:shadow-md"
+                )}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className={clsx(
                     "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
