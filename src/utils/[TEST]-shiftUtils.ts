@@ -1,9 +1,9 @@
 import { ShiftType } from '../types';
 
 export const SHIFT_ORDER: Record<string, number> = {
-  'M': 1,
-  'A': 2,
-  'N': 3,
+  'N': 1,
+  'M': 2,
+  'A': 3,
   'O': 4,
   'OT': 5
 };

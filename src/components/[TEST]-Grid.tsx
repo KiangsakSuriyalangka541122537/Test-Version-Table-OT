@@ -62,7 +62,16 @@ export function Grid({
   const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
     const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
-    return shift.shift_type.split(',') as ShiftType[];
+    
+    const shiftTypes = shift.shift_type.split(',') as ShiftType[];
+    const sortOrder: Record<string, number> = {
+      'N': 1, // ดึก
+      'M': 2, // เช้า
+      'A': 3, // บ่าย
+      'O': 4  // หยุด
+    };
+    
+    return shiftTypes.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
   };
 
   return (

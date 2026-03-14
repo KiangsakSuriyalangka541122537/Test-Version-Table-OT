@@ -161,16 +161,28 @@ export function ShiftSwapRequestModal({
 
   const getShiftLabel = (type: string) => {
     if (!type || type === 'O') return shiftLabels['O'];
-    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+    const types = type.split(',').map(t => t.trim() as ShiftType);
+    const sortOrder: Record<string, number> = { 'N': 1, 'M': 2, 'A': 3, 'O': 4 };
+    types.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
+    return types.map(t => shiftLabels[t] || t).join(' + ');
   };
 
   const getSummaryShiftLabel = (type: string) => {
     if (!type || type === 'O') return 'วันหยุด';
-    const types = type.split(',').map(t => t.trim());
-    if (types.includes('A') || types.includes('N')) {
+    const types = type.split(',').map(t => t.trim() as ShiftType);
+    const sortOrder: Record<string, number> = { 'N': 1, 'M': 2, 'A': 3, 'O': 4 };
+    types.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
+    
+    // If it's exactly A and N (or just A, or just N, based on previous logic, but let's be careful)
+    // Actually, if it's just A or just N, the user wanted it to show "บ่าย + ดึก"
+    if (types.length === 1 && (types[0] === 'A' || types[0] === 'N')) {
       return 'บ่าย + ดึก';
     }
-    return types.map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+    if (types.includes('A') && types.includes('N') && types.length === 2) {
+      return 'บ่าย + ดึก';
+    }
+    
+    return types.map(t => shiftLabels[t] || t).join(' + ');
   };
 
   const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);

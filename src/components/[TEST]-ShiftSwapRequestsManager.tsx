@@ -146,7 +146,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
   const getShiftLabel = (type: string) => {
     if (!type) return shiftLabels['O'];
-    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+    const types = type.split(',').map(t => t.trim() as ShiftType);
+    const sortOrder: Record<string, number> = { 'N': 1, 'M': 2, 'A': 3, 'O': 4 };
+    types.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
+    return types.map(t => shiftLabels[t] || t).join(' + ');
   };
   const getShiftColor = (type: string) => {
     if (!type) return shiftColors['O'];

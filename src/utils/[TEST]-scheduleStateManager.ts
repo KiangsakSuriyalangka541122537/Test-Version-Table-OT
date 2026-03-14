@@ -10,9 +10,9 @@ export interface ScheduleData {
 
 // ลำดับของเวรสำหรับการจัดเรียง
 const SHIFT_ORDER: Record<string, number> = {
-  'ช': 1,
-  'บ': 2,
-  'ด': 3,
+  'ด': 1,
+  'ช': 2,
+  'บ': 3,
   'O': 4,
   'OT': 5
 };

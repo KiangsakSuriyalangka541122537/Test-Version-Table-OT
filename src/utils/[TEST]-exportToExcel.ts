@@ -184,10 +184,18 @@ export const exportToExcel = async (currentMonth: Date, staffList: Staff[], shif
         } else {
           const dateStr = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day), 'yyyy-MM-dd');
           const shift = staffShifts.find(s => s.date === dateStr);
-          if (shift) {
-            if (shift.shift_type === 'M') cell.value = 'ช';
-            else if (shift.shift_type === 'A') cell.value = 'บ';
-            else if (shift.shift_type === 'N') cell.value = 'ด';
+          if (shift && shift.shift_type) {
+            const types = shift.shift_type.split(',');
+            const sortOrder: Record<string, number> = { 'N': 1, 'M': 2, 'A': 3, 'O': 4 };
+            types.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
+            
+            cell.value = types.map(t => {
+              if (t === 'M') return 'ช';
+              if (t === 'A') return 'บ';
+              if (t === 'N') return 'ด';
+              if (t === 'O') return 'ย';
+              return '';
+            }).join('|');
           }
         }
       });
