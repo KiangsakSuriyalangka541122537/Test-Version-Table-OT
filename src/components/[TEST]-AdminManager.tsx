@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { X, Users, Trash2, Plus, Edit2, User as UserIcon, RefreshCw, ClipboardList, Settings } from 'lucide-react';
+import { X, Users, Trash2, Plus, Edit2, User as UserIcon, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { User, Staff, Shift } from '../types';
-import { ShiftSwapRequestsManager } from './[TEST]-ShiftSwapRequestsManager';
+import { Staff, Shift } from '../types';
 
 interface AdminManagerProps {
   isOpen: boolean;
@@ -14,65 +13,41 @@ interface AdminManagerProps {
 }
 
 export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate, allShifts }: AdminManagerProps) {
-  const [activeTab, setActiveTab] = useState<'staff' | 'requests'>('staff');
   const [newStaffName, setNewStaffName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSyncStaff = async () => {
-    if (!window.confirm('คุณต้องการรีเซ็ตรายชื่อบุคลากรและรหัสผ่านให้เป็นไปตามค่าเริ่มต้นหรือไม่? (ข้อมูลเดิมจะถูกลบ)')) return;
-
+  const handleUpdateStaffName = async (id: string, oldName: string) => {
+    if (!editingName.trim()) return;
     setLoading(true);
     setError('');
 
     try {
-      // 1. Clear existing staff and users (optional, but requested for cleanup)
-      // For safety, we only delete the duplicate "นายเกรียงศักดิ์ สุริยะลังกา" if it exists
-      // But the user specifically listed the people they want.
-      
-      const defaultStaff = [
-        { name: 'นายกิตติพงษ์ ชัยศรี', username: 'tor', password: 'tor', role: 'staff' },
-        { name: 'นางสาววรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
-        { name: 'นางสาวศิรินชา พึ่งวงษ์เขียน', username: 'jhim', password: 'jhim', role: 'staff' },
-        { name: 'นางสาวนิธิพร ใสปา', username: 'parn', password: 'parn', role: 'staff' },
-        { name: 'นายเกรียงศักดิ์ สุริยะลังกา', username: 'top', password: 'top', role: 'staff' },
-        { name: 'นายวิทวัส หมายมั่น', username: 'team', password: 'team', role: 'staff' },
-      ];
+      // 1. Update Staff
+      const { error: staffError } = await supabase
+        .from('test_staff')
+        .update({ name: editingName })
+        .eq('id', id);
 
-      // Delete all current staff and users to start fresh as requested
-      await supabase.from('test_staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('test_users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (staffError) throw staffError;
 
-      for (const s of defaultStaff) {
-        // Insert Staff
-        const { data: staffData, error: staffError } = await supabase
-          .from('test_staff')
-          .insert([{ name: s.name }])
-          .select()
-          .single();
+      // 2. Update User (by name)
+      const { error: userError } = await supabase
+        .from('test_users')
+        .update({ name: editingName })
+        .eq('name', oldName);
 
-        if (staffError) throw staffError;
+      if (userError) throw userError;
 
-        // Insert User
-        const { error: userError } = await supabase
-          .from('test_users')
-          .insert([{
-            username: s.username,
-            password: s.password,
-            name: s.name,
-            role: s.role
-          }]);
-
-        if (userError) throw userError;
-      }
-
+      setEditingStaffId(null);
       onStaffUpdate();
-      alert('ตั้งค่าบุคลากรเริ่มต้นเรียบร้อยแล้ว');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -172,52 +147,17 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate, allShi
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">จัดการระบบ</h2>
-              <p className="text-gray-500 text-sm">จัดการบุคลากรและคำขอย้ายเวร</p>
+              <p className="text-gray-500 text-sm">จัดการบุคลากร</p>
             </div>
-          </div>
-          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
-            <button
-              onClick={() => setActiveTab('staff')}
-              className={clsx(
-                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2",
-                activeTab === 'staff' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              <Users className="w-3.5 h-3.5" />
-              บุคลากร
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={clsx(
-                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2",
-                activeTab === 'requests' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              คำขอย้ายเวร
-            </button>
           </div>
         </div>
 
-        {activeTab === 'staff' ? (
-          <>
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end mb-4">
-              <button
-                onClick={handleSyncStaff}
-                disabled={loading}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-                title="รีเซ็ตเป็นรายชื่อเริ่มต้น"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                ตั้งค่าบุคลากรเริ่มต้น
-              </button>
+        <div className="flex-1 overflow-y-auto">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
+              {error}
             </div>
+          )}
 
             {/* Staff Management Section */}
             <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
@@ -296,18 +236,55 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate, allShi
                           }`}>
                             <UserIcon className="w-4 h-4" />
                           </div>
-                          {staff.name}
+                          {editingStaffId === staff.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                className="px-2 py-1 border border-indigo-300 rounded focus:ring-1 focus:ring-indigo-500 text-sm"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleUpdateStaffName(staff.id, staff.name)}
+                                className="text-emerald-600 hover:text-emerald-700 text-xs font-bold"
+                              >
+                                บันทึก
+                              </button>
+                              <button
+                                onClick={() => setEditingStaffId(null)}
+                                className="text-gray-400 hover:text-gray-600 text-xs"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          ) : (
+                            staff.name
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleDeleteStaff(staff.id, staff.name)}
-                          disabled={loading}
-                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
-                          title="ลบพนักงาน"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingStaffId(staff.id);
+                              setEditingName(staff.name);
+                            }}
+                            disabled={loading}
+                            className="text-indigo-600 hover:text-indigo-900 p-2 hover:bg-indigo-50 rounded-full transition-colors"
+                            title="แก้ไขชื่อ"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStaff(staff.id, staff.name)}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
+                            title="ลบพนักงาน"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -321,17 +298,8 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate, allShi
                 </tbody>
               </table>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 overflow-y-auto">
-            <ShiftSwapRequestsManager 
-              allStaff={staffList} 
-              allShifts={allShifts} 
-              onUpdate={onStaffUpdate} 
-            />
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  );
+    );
 }
