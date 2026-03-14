@@ -196,31 +196,23 @@ export function Grid({
                     const isRequester = s.requester_staff_id === staff.id;
                     const isTarget = s.target_staff_id === staff.id;
                     
-                    if (isRequester) {
-                      if (s.requester_date === dateStr) return true;
-                      // Handle A/N pairing: if A is moved, N on next day is also moved
-                      if (s.requester_shift_type?.includes('A')) {
-                        const nextDay = format(addDays(parseDateSafe(s.requester_date), 1), 'yyyy-MM-dd');
-                        if (nextDay === dateStr) return true;
-                      }
-                      // If N is moved, A on previous day is also moved
-                      if (s.requester_shift_type?.includes('N')) {
-                        const prevDay = format(addDays(parseDateSafe(s.requester_date), -1), 'yyyy-MM-dd');
-                        if (prevDay === dateStr) return true;
-                      }
+                    if (!isRequester && !isTarget) return false;
+
+                    // Base dates
+                    if (s.requester_date === dateStr || s.target_date === dateStr) return true;
+
+                    // Handle A/N pairing: if A is moved, N on next day is also moved for BOTH
+                    if (s.requester_shift_type?.includes('A') || s.target_shift_type?.includes('A')) {
+                      const reqNextDay = format(addDays(parseDateSafe(s.requester_date), 1), 'yyyy-MM-dd');
+                      const tarNextDay = format(addDays(parseDateSafe(s.target_date), 1), 'yyyy-MM-dd');
+                      if (reqNextDay === dateStr || tarNextDay === dateStr) return true;
                     }
                     
-                    if (isTarget) {
-                      if (s.target_date === dateStr) return true;
-                      // Handle A/N pairing
-                      if (s.target_shift_type?.includes('A')) {
-                        const nextDay = format(addDays(parseDateSafe(s.target_date), 1), 'yyyy-MM-dd');
-                        if (nextDay === dateStr) return true;
-                      }
-                      if (s.target_shift_type?.includes('N')) {
-                        const prevDay = format(addDays(parseDateSafe(s.target_date), -1), 'yyyy-MM-dd');
-                        if (prevDay === dateStr) return true;
-                      }
+                    // If N is moved, A on previous day is also moved for BOTH
+                    if (s.requester_shift_type?.includes('N') || s.target_shift_type?.includes('N')) {
+                      const reqPrevDay = format(addDays(parseDateSafe(s.requester_date), -1), 'yyyy-MM-dd');
+                      const tarPrevDay = format(addDays(parseDateSafe(s.target_date), -1), 'yyyy-MM-dd');
+                      if (reqPrevDay === dateStr || tarPrevDay === dateStr) return true;
                     }
                     
                     return false;
@@ -240,10 +232,30 @@ export function Grid({
                           }
                         }}
                         onMouseEnter={() => {
-                          const relatedSwaps = approvedSwaps.filter(s => 
-                            (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
-                            (s.target_staff_id === staff.id && s.target_date === dateStr)
-                          );
+                          const relatedSwaps = approvedSwaps.filter(s => {
+                            const isRequester = s.requester_staff_id === staff.id;
+                            const isTarget = s.target_staff_id === staff.id;
+                            
+                            if (!isRequester && !isTarget) return false;
+
+                            // Direct match
+                            if (s.requester_date === dateStr || s.target_date === dateStr) return true;
+
+                            // Pairing match
+                            if (s.requester_shift_type?.includes('A') || s.target_shift_type?.includes('A')) {
+                              const reqNextDay = format(addDays(parseDateSafe(s.requester_date), 1), 'yyyy-MM-dd');
+                              const tarNextDay = format(addDays(parseDateSafe(s.target_date), 1), 'yyyy-MM-dd');
+                              if (reqNextDay === dateStr || tarNextDay === dateStr) return true;
+                            }
+                            if (s.requester_shift_type?.includes('N') || s.target_shift_type?.includes('N')) {
+                              const reqPrevDay = format(addDays(parseDateSafe(s.requester_date), -1), 'yyyy-MM-dd');
+                              const tarPrevDay = format(addDays(parseDateSafe(s.target_date), -1), 'yyyy-MM-dd');
+                              if (reqPrevDay === dateStr || tarPrevDay === dateStr) return true;
+                            }
+
+                            return false;
+                          });
+                          
                           if (relatedSwaps.length > 0) {
                             setHoveredSwapIds(relatedSwaps.map(s => s.id));
                           }
