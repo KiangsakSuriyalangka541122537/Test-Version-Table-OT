@@ -103,7 +103,7 @@ export function Grid({
                   scope="col"
                   className={clsx(
                     "px-0.5 py-2 text-center text-[9px] font-bold uppercase tracking-tighter border-r border-slate-200 transition-colors",
-                    isWknd ? "bg-rose-50/50 text-rose-600" : "text-slate-400",
+                    isWknd ? "bg-rose-200 text-rose-900" : "text-slate-400",
                     isTdy && "bg-indigo-50/50 text-indigo-600",
                     isColHighlighted && "bg-yellow-100/50! text-yellow-700"
                   )}
@@ -264,7 +264,7 @@ export function Grid({
                         className={clsx(
                           "px-1 py-3 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                           isTdy && "bg-indigo-50/30",
-                          isWknd && "bg-rose-50/10",
+                          isWknd && "bg-rose-100/80",
                           isCrosshair && "bg-yellow-50/40",
                           isHoveredSwap && "bg-yellow-100! z-10",
                           (isSelectedForMove || isSelectedRequester || isPendingRequester) && "bg-yellow-400! z-10",
